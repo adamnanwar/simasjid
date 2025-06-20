@@ -232,13 +232,43 @@ class LaporanInfaqController extends Controller
     public function update(Request $request, Donation $donation)
     {
         $request->validate([
-            'status' => 'required|in:pending,confirmed,cancelled'
+            'nama_donatur' => 'nullable|string|max:255',
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string',
+            'tanggal' => 'required|date',
+            'kategori' => 'required|in:Infaq,Sedekah,Zakat',
+            'program' => 'required|string|max:255',
+            'jumlah' => 'required|numeric|min:0',
+            'metode' => 'required|in:Tunai,Transfer Bank,E-Wallet,Kartu Kredit',
+            'anonim' => 'boolean',
+            'description' => 'nullable|string'
         ]);
+
+        // Set default values untuk field yang kosong
+        $nama_donatur = $request->nama_donatur ?: 'Hamba Allah';
+        $email = $request->email ?: 'hamba.allah@alikhlash.com';
+        $phone = $request->phone ?: '-';
 
         $donation->update([
-            'status' => $request->status
+            'nama_donatur' => $nama_donatur,
+            'email' => $email,
+            'phone' => $phone,
+            'tanggal' => $request->tanggal,
+            'kategori' => $request->kategori,
+            'program' => $request->program,
+            'jumlah' => $request->jumlah,
+            'metode' => $request->metode,
+            'anonim' => $request->boolean('anonim'),
+            'description' => $request->description
         ]);
 
-        return redirect()->back()->with('success', 'Status donasi berhasil diupdate');
+        return back()->with('message', 'Donasi berhasil diperbarui!');
+    }
+
+    public function destroy(Donation $donation)
+    {
+        $donation->delete();
+
+        return back()->with('message', 'Donasi berhasil dihapus!');
     }
 }

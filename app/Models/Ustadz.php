@@ -15,6 +15,9 @@ class Ustadz extends Model
         'specialization',
         'experience',
         'schedule',
+        'schedule_days',
+        'schedule_start_time',
+        'schedule_end_time',
         'phone',
         'email',
         'bio',
@@ -22,7 +25,8 @@ class Ustadz extends Model
     ];
 
     protected $casts = [
-        'active' => 'boolean'
+        'active' => 'boolean',
+        'schedule_days' => 'array'
     ];
 
     public function appointments(): HasMany

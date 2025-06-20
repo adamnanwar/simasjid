@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, FileText, Calendar, Eye, EyeOff, User } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
+import { AlertModal } from '@/components/ui/alert-modal';
+import { useAlert } from '@/hooks/use-alert';
 
 interface Berita {
     id: number;
@@ -29,6 +31,9 @@ export default function AdminBerita() {
     const [showDialog, setShowDialog] = useState(false);
     const [editingNews, setEditingNews] = useState<Berita | null>(null);
     const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, id: number | null}>({isOpen: false, id: null});
+
+    const { alertState, showAlert, hideAlert } = useAlert();
 
     const { data, setData, post, processing, errors, reset } = useForm({
         judul: '',
@@ -182,43 +187,54 @@ export default function AdminBerita() {
             }
 
             if (response.ok) {
-                console.log('Berita berhasil disimpan');
-                // Refresh data dari server
+                showAlert('success', 'Berhasil!', editingNews ? 'Berita berhasil diperbarui!' : 'Berita berhasil ditambahkan!');
                 await fetchNews();
                 handleCloseDialog();
             } else {
-                console.error('Error saving berita:', response.statusText);
-                alert('Gagal menyimpan berita. Silakan coba lagi.');
+                const errorData = await response.json().catch(() => null);
+                showAlert('error', 'Gagal!', errorData?.message || 'Gagal menyimpan berita. Silakan coba lagi.');
             }
         } catch (error) {
             console.error('Error saving berita:', error);
-            alert('Gagal menyimpan berita. Silakan coba lagi.');
+            showAlert('error', 'Error!', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (confirm('Apakah Anda yakin ingin menghapus berita ini?')) {
-            try {
-                const response = await fetch(`/berita-kegiatan/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    },
-                });
+    const handleDeleteConfirm = (id: number) => {
+        setDeleteConfirm({isOpen: true, id});
+    };
 
-                if (response.ok) {
-                    console.log('Berita berhasil dihapus');
-                    await fetchNews(); // Refresh data
-                } else {
-                    console.error('Error deleting berita:', response.statusText);
-                    alert('Gagal menghapus berita. Silakan coba lagi.');
-                }
-            } catch (error) {
-                console.error('Error deleting berita:', error);
-                alert('Gagal menghapus berita. Silakan coba lagi.');
+    const handleDelete = async () => {
+        if (!deleteConfirm.id) return;
+        
+        try {
+            const formData = new FormData();
+            formData.append('_method', 'DELETE');
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+
+            const response = await fetch(`/berita-kegiatan/${deleteConfirm.id}`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                showAlert('success', 'Berhasil!', 'Berita berhasil dihapus!');
+                await fetchNews();
+            } else {
+                const errorData = await response.json().catch(() => null);
+                showAlert('error', 'Gagal!', errorData?.message || 'Gagal menghapus berita. Silakan coba lagi.');
             }
+        } catch (error) {
+            console.error('Error deleting berita:', error);
+            showAlert('error', 'Error!', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
+        } finally {
+            setDeleteConfirm({isOpen: false, id: null});
         }
     };
 
@@ -244,15 +260,15 @@ export default function AdminBerita() {
             });
 
             if (response.ok) {
-                console.log('Status berita berhasil diubah');
-                await fetchNews(); // Refresh data
+                showAlert('success', 'Berhasil!', 'Status berita berhasil diubah!');
+                await fetchNews();
             } else {
-                console.error('Error updating status:', response.statusText);
-                alert('Gagal mengubah status berita. Silakan coba lagi.');
+                const errorData = await response.json().catch(() => null);
+                showAlert('error', 'Gagal!', errorData?.message || 'Gagal mengubah status berita. Silakan coba lagi.');
             }
         } catch (error) {
             console.error('Error updating status:', error);
-            alert('Gagal mengubah status berita. Silakan coba lagi.');
+            showAlert('error', 'Error!', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
         }
     };
 
@@ -553,7 +569,7 @@ export default function AdminBerita() {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => handleDelete(item.id)}
+                                            onClick={() => handleDeleteConfirm(item.id)}
                                             className="text-red-600 hover:text-red-700"
                                         >
                                             <Trash2 className="w-3 h-3" />
@@ -592,6 +608,28 @@ export default function AdminBerita() {
                     </Button>
                 </div>
             )}
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertState.isOpen}
+                onClose={hideAlert}
+                type={alertState.type}
+                title={alertState.title}
+                message={alertState.message}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <AlertModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({isOpen: false, id: null})}
+                type="warning"
+                title="Konfirmasi Hapus"
+                message="Apakah Anda yakin ingin menghapus berita ini? Tindakan ini tidak dapat dibatalkan."
+                confirmText="Hapus"
+                cancelText="Batal"
+                showCancel={true}
+                onConfirm={handleDelete}
+            />
         </AdminLayout>
     );
 } 

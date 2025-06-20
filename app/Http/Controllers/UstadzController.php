@@ -24,18 +24,28 @@ class UstadzController extends Controller
             'name' => 'required|string|max:255',
             'specialization' => 'required|string|max:255',
             'experience' => 'required|string|max:255',
-            'schedule' => 'required|string|max:255',
+            'schedule_days' => 'required|array|min:1',
+            'schedule_days.*' => 'in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'schedule_start_time' => 'required|date_format:H:i',
+            'schedule_end_time' => 'required|date_format:H:i|after:schedule_start_time',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'bio' => 'nullable|string',
             'active' => 'boolean'
         ]);
 
+        // Generate readable schedule for backward compatibility
+        $scheduleText = implode(', ', $request->schedule_days) . ': ' . 
+                       $request->schedule_start_time . '-' . $request->schedule_end_time;
+
         $ustadz = Ustadz::create([
             'name' => $request->name,
             'specialization' => $request->specialization,
             'experience' => $request->experience,
-            'schedule' => $request->schedule,
+            'schedule' => $scheduleText,
+            'schedule_days' => $request->schedule_days,
+            'schedule_start_time' => $request->schedule_start_time,
+            'schedule_end_time' => $request->schedule_end_time,
             'phone' => $request->phone,
             'email' => $request->email,
             'bio' => $request->bio,
@@ -55,18 +65,28 @@ class UstadzController extends Controller
             'name' => 'required|string|max:255',
             'specialization' => 'required|string|max:255',
             'experience' => 'required|string|max:255',
-            'schedule' => 'required|string|max:255',
+            'schedule_days' => 'required|array|min:1',
+            'schedule_days.*' => 'in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'schedule_start_time' => 'required|date_format:H:i',
+            'schedule_end_time' => 'required|date_format:H:i|after:schedule_start_time',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'bio' => 'nullable|string',
             'active' => 'boolean'
         ]);
 
+        // Generate readable schedule for backward compatibility
+        $scheduleText = implode(', ', $request->schedule_days) . ': ' . 
+                       $request->schedule_start_time . '-' . $request->schedule_end_time;
+
         $ustadz->update([
             'name' => $request->name,
             'specialization' => $request->specialization,
             'experience' => $request->experience,
-            'schedule' => $request->schedule,
+            'schedule' => $scheduleText,
+            'schedule_days' => $request->schedule_days,
+            'schedule_start_time' => $request->schedule_start_time,
+            'schedule_end_time' => $request->schedule_end_time,
             'phone' => $request->phone,
             'email' => $request->email,
             'bio' => $request->bio,

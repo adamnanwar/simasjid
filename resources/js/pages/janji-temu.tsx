@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertModal } from '@/components/ui/alert-modal';
+import { useAlert } from '@/hooks/use-alert';
 import { 
     Calendar,
     Clock,
@@ -15,9 +18,10 @@ import {
     Plus,
     CheckCircle,
     XCircle,
-    AlertCircle
+    AlertCircle,
+    MapPin,
+    BookOpen
 } from 'lucide-react';
-import { AlertModal } from '@/components/ui/alert-modal';
 
 interface JanjiTemu {
     id: number;
@@ -36,7 +40,10 @@ interface Ustadz {
     name: string;
     specialization: string;
     experience: string;
-    schedule: string;
+    schedule: string; // For backward compatibility display
+    schedule_days?: string[];
+    schedule_start_time?: string;
+    schedule_end_time?: string;
     phone?: string;
     email?: string;
     bio?: string;
@@ -46,10 +53,7 @@ interface Ustadz {
 interface JanjiTemuPageProps {
     janjiTemu?: {
         data: JanjiTemu[];
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
+        meta?: any;
     };
     ustadz: Ustadz[];
 }
@@ -68,13 +72,7 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     
-    // Alert Modal state
-    const [alertModal, setAlertModal] = useState({
-        isOpen: false,
-        type: 'info' as 'success' | 'error' | 'warning' | 'info',
-        title: '',
-        message: ''
-    });
+    const { alertState, showAlert, hideAlert } = useAlert();
     
     const [bookingForm, setBookingForm] = useState({
         nama: '',
@@ -105,40 +103,74 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
         }
     };
 
-    // Function to show alert modal
-    const showAlert = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
-        setAlertModal({
-            isOpen: true,
-            type,
-            title,
-            message
-        });
-    };
-
-    // Generate time slots based on ustadz schedules
+    // Generate time slots based on ustadz schedules and selected date
     const generateTimeSlots = (): TimeSlot[] => {
         const slots: TimeSlot[] = [];
-        const times = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
         
-        times.forEach(time => {
+        // Generate time slots from 08:00 to 20:00 in 1-hour intervals
+        for (let hour = 8; hour <= 20; hour++) {
+            const timeString = `${hour.toString().padStart(2, '0')}:00`;
+            
             // Find ustadz available at this time
             const availableUstadz = ustadz.find(u => {
-                const scheduleMatch = u.schedule.match(/(\d{2}:\d{2})-(\d{2}:\d{2})/);
-                if (scheduleMatch) {
-                    const [, startTime, endTime] = scheduleMatch;
-                    return time >= startTime && time <= endTime && u.active;
+                if (!u.active) return false;
+                
+                // Use structured data if available, otherwise parse schedule string
+                let days: string[] = u.schedule_days || [];
+                let startTime = u.schedule_start_time || '';
+                let endTime = u.schedule_end_time || '';
+                
+                // Fallback: parse from schedule string if structured data not available
+                if (days.length === 0 && u.schedule) {
+                    const scheduleMatch = u.schedule.match(/(.+):\s*(\d{2}:\d{2})-(\d{2}:\d{2})/);
+                    if (scheduleMatch) {
+                        const [, daysStr, start, end] = scheduleMatch;
+                        days = daysStr.split(',').map(d => d.trim());
+                        startTime = start;
+                        endTime = end;
+                    }
                 }
-                return false;
+                
+                if (days.length === 0 || !startTime || !endTime) return false;
+                
+                // Check if selected date is within working days
+                if (selectedDate) {
+                    const selectedDateObj = new Date(selectedDate);
+                    const dayMapping: { [key: string]: string } = {
+                        'Monday': 'Senin',
+                        'Tuesday': 'Selasa', 
+                        'Wednesday': 'Rabu',
+                        'Thursday': 'Kamis',
+                        'Friday': 'Jumat',
+                        'Saturday': 'Sabtu',
+                        'Sunday': 'Minggu'
+                    };
+                    const indonesianDay = dayMapping[selectedDateObj.toLocaleDateString('en-US', { weekday: 'long' })];
+                    
+                    if (!days.includes(indonesianDay)) {
+                        return false;
+                    }
+                }
+                
+                // Check if time is within working hours
+                return timeString >= startTime && timeString <= endTime;
             });
 
-            if (availableUstadz) {
+            // Check if slot is already booked
+            const isBooked = selectedDate && appointments.some(appointment => 
+                appointment.tanggal === selectedDate && 
+                appointment.waktu === timeString &&
+                appointment.status !== 'rejected'
+            );
+
+            if (availableUstadz && !isBooked) {
                 slots.push({
-                    time,
+                    time: timeString,
                     available: true,
                     ustadz: availableUstadz.name
                 });
             }
-        });
+        }
         
         return slots;
     };
@@ -186,22 +218,15 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
 
     const handleSubmitBooking = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (!selectedDate || !selectedTime) {
-            showAlert('warning', 'Data Tidak Lengkap', 'Silakan pilih tanggal dan waktu');
-            return;
-        }
-
         setSubmitting(true);
-        
-        const formData = {
-            nama: bookingForm.nama,
-            email: bookingForm.email,
-            telepon: bookingForm.telepon,
-            tanggal: selectedDate,
-            waktu: selectedTime,
-            keperluan: bookingForm.keperluan,
-        };
+
+        const formData = new FormData();
+        formData.append('nama', bookingForm.nama);
+        formData.append('email', bookingForm.email);
+        formData.append('telepon', bookingForm.telepon);
+        formData.append('tanggal', selectedDate);
+        formData.append('waktu', selectedTime);
+        formData.append('keperluan', bookingForm.keperluan);
 
         try {
             router.post('/janji-temu', formData, {
@@ -316,31 +341,47 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
                                                 id="tanggal"
                                                 type="date"
                                                 value={selectedDate}
-                                                onChange={(e) => setSelectedDate(e.target.value)}
+                                                onChange={(e) => {
+                                                    setSelectedDate(e.target.value);
+                                                    setSelectedTime(''); // Reset time when date changes
+                                                }}
                                                 min={new Date().toISOString().split('T')[0]}
                                                 required
                                             />
                                         </div>
                                         <div className="md:col-span-2">
                                             <Label htmlFor="waktu">Waktu *</Label>
-                                            <select
-                                                id="waktu"
-                                                value={selectedTime}
-                                                onChange={(e) => setSelectedTime(e.target.value)}
-                                                className="w-full p-2 border border-gray-300 rounded-md"
-                                                required
-                                            >
-                                                <option value="">Pilih waktu</option>
-                                                {timeSlots.map((slot) => (
-                                                    <option 
-                                                        key={slot.time} 
-                                                        value={slot.time}
-                                                        disabled={!slot.available}
-                                                    >
-                                                        {slot.time} - {slot.ustadz} {!slot.available && '(Tidak Tersedia)'}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            {selectedDate ? (
+                                                <select
+                                                    id="waktu"
+                                                    value={selectedTime}
+                                                    onChange={(e) => setSelectedTime(e.target.value)}
+                                                    className="w-full p-2 border border-gray-300 rounded-md"
+                                                    required
+                                                >
+                                                    <option value="">Pilih waktu yang tersedia</option>
+                                                    {timeSlots.map((slot) => (
+                                                        <option 
+                                                            key={slot.time} 
+                                                            value={slot.time}
+                                                        >
+                                                            {slot.time} - dengan {slot.ustadz}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <div className="p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                                    Pilih tanggal terlebih dahulu
+                                                </div>
+                                            )}
+                                            
+                                            {selectedDate && timeSlots.length === 0 && (
+                                                <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                                                    <p className="text-sm text-orange-700">
+                                                        Tidak ada waktu yang tersedia untuk tanggal ini. Silakan pilih tanggal lain.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div>
@@ -505,23 +546,33 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
                                 </CardContent>
                             </Card>
 
-                            {/* Available Times Today */}
+                            {/* Available Times Today Preview */}
                             <Card className="shadow-lg">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Clock className="h-5 w-5" />
-                                        Waktu Tersedia Hari Ini
+                                        Waktu Tersedia {selectedDate ? `(${new Date(selectedDate).toLocaleDateString('id-ID')})` : 'Hari Ini'}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {timeSlots.filter(slot => slot.available).map((slot) => (
-                                            <div key={slot.time} className="p-2 bg-green-50 rounded text-center text-sm">
-                                                <div className="font-medium text-green-800">{slot.time}</div>
-                                                <div className="text-xs text-green-600">{slot.ustadz}</div>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    {selectedDate && timeSlots.length > 0 ? (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {timeSlots.map((slot) => (
+                                                <div key={slot.time} className="p-2 bg-green-50 rounded text-center text-sm">
+                                                    <div className="font-medium text-green-800">{slot.time}</div>
+                                                    <div className="text-xs text-green-600">{slot.ustadz}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : selectedDate ? (
+                                        <div className="text-center py-4">
+                                            <p className="text-gray-500">Tidak ada waktu yang tersedia untuk tanggal ini</p>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-4">
+                                            <p className="text-gray-500">Pilih tanggal untuk melihat waktu yang tersedia</p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
@@ -531,11 +582,11 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
 
             {/* Alert Modal */}
             <AlertModal
-                isOpen={alertModal.isOpen}
-                onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
-                type={alertModal.type}
-                title={alertModal.title}
-                message={alertModal.message}
+                isOpen={alertState.isOpen}
+                onClose={hideAlert}
+                type={alertState.type}
+                title={alertState.title}
+                message={alertState.message}
             />
         </MainLayout>
     );

@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, DollarSign, TrendingUp, User, Calendar } from 'lucide-react';
 import { useForm, router } from '@inertiajs/react';
+import { AlertModal } from '@/components/ui/alert-modal';
+import { useAlert } from '@/hooks/use-alert';
 
 interface Donasi {
     id: number;
@@ -28,6 +30,9 @@ export default function AdminKeuanganDonasi() {
     const [loading, setLoading] = useState(true);
     const [showDialog, setShowDialog] = useState(false);
     const [editingDonation, setEditingDonation] = useState<Donasi | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, id: number | null}>({isOpen: false, id: null});
+
+    const { alertState, showAlert, hideAlert } = useAlert();
 
     const { data, setData, post, processing, errors, reset } = useForm({
         nama: '',
@@ -113,7 +118,7 @@ export default function AdminKeuanganDonasi() {
         reset();
     };
 
-        const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
         // Set default values untuk field yang kosong
@@ -161,17 +166,35 @@ export default function AdminKeuanganDonasi() {
         }
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('Apakah Anda yakin ingin menghapus data donasi ini?')) {
-            fetch(`/laporan-infaq/${id}`, {
+    const handleDeleteConfirm = (id: number) => {
+        setDeleteConfirm({isOpen: true, id});
+    };
+
+    const handleDelete = async () => {
+        if (!deleteConfirm.id) return;
+        
+        try {
+            const response = await fetch(`/laporan-infaq/${deleteConfirm.id}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                 }
-            }).then(() => {
-                fetchDonations();
             });
+
+            if (response.ok) {
+                showAlert('success', 'Berhasil!', 'Donasi berhasil dihapus!');
+                await fetchDonations();
+            } else {
+                const errorData = await response.json().catch(() => null);
+                showAlert('error', 'Gagal!', errorData?.message || 'Gagal menghapus donasi. Silakan coba lagi.');
+            }
+        } catch (error) {
+            console.error('Error deleting donation:', error);
+            showAlert('error', 'Error!', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
+        } finally {
+            setDeleteConfirm({isOpen: false, id: null});
         }
     };
 
@@ -454,7 +477,7 @@ export default function AdminKeuanganDonasi() {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => handleDelete(donation.id)}
+                                            onClick={() => handleDeleteConfirm(donation.id)}
                                             className="text-red-600 hover:text-red-700"
                                         >
                                             <Trash2 className="w-3 h-3" />
@@ -479,6 +502,28 @@ export default function AdminKeuanganDonasi() {
                     </Button>
                 </div>
             )}
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertState.isOpen}
+                onClose={hideAlert}
+                type={alertState.type}
+                title={alertState.title}
+                message={alertState.message}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <AlertModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({isOpen: false, id: null})}
+                type="warning"
+                title="Konfirmasi Hapus"
+                message="Apakah Anda yakin ingin menghapus data donasi ini? Tindakan ini tidak dapat dibatalkan."
+                confirmText="Hapus"
+                cancelText="Batal"
+                showCancel={true}
+                onConfirm={handleDelete}
+            />
         </AdminLayout>
     );
 } 

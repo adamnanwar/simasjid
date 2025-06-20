@@ -97,15 +97,20 @@ class BeritaKegiatanController extends Controller
         $request->validate([
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
+            'ringkasan' => 'nullable|string',
+            'kategori' => 'nullable|string',
+            'status' => 'nullable|in:draft,published',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'tanggal_kegiatan' => 'nullable|date',
+            'tanggal_publikasi' => 'nullable|date',
+            'penulis' => 'nullable|string',
             'jenis' => 'required|in:berita,kegiatan'
         ]);
 
-        $data = $request->only(['judul', 'konten', 'tanggal_kegiatan', 'jenis']);
+        $data = $request->only(['judul', 'konten', 'ringkasan', 'kategori', 'jenis']);
         $data['slug'] = Str::slug($request->judul);
-        $data['tanggal_publikasi'] = now();
-        $data['penulis'] = auth()->user()->name;
+        $data['status'] = $request->status ?: 'published';
+        $data['tanggal_publikasi'] = $request->tanggal_publikasi ? $request->tanggal_publikasi : now();
+        $data['penulis'] = $request->penulis ?: (auth()->user()->name ?? 'Admin');
 
         if ($request->hasFile('gambar')) {
             $data['gambar'] = $request->file('gambar')->store('berita-kegiatan', 'public');
@@ -113,7 +118,7 @@ class BeritaKegiatanController extends Controller
 
         BeritaKegiatan::create($data);
 
-        return back()->with('message', 'Berita/Kegiatan berhasil ditambahkan!');
+        return response()->json(['success' => true, 'message' => 'Berita/Kegiatan berhasil ditambahkan!']);
     }
 
     public function update(Request $request, BeritaKegiatan $beritaKegiatan)
@@ -121,13 +126,20 @@ class BeritaKegiatanController extends Controller
         $request->validate([
             'judul' => 'required|string|max:255',
             'konten' => 'required|string',
+            'ringkasan' => 'nullable|string',
+            'kategori' => 'nullable|string',
+            'status' => 'nullable|in:draft,published',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'tanggal_kegiatan' => 'nullable|date',
+            'tanggal_publikasi' => 'nullable|date',
+            'penulis' => 'nullable|string',
             'jenis' => 'required|in:berita,kegiatan'
         ]);
 
-        $data = $request->only(['judul', 'konten', 'tanggal_kegiatan', 'jenis']);
+        $data = $request->only(['judul', 'konten', 'ringkasan', 'kategori', 'jenis']);
         $data['slug'] = Str::slug($request->judul);
+        $data['status'] = $request->status ?: $beritaKegiatan->status;
+        $data['tanggal_publikasi'] = $request->tanggal_publikasi ?: $beritaKegiatan->tanggal_publikasi;
+        $data['penulis'] = $request->penulis ?: $beritaKegiatan->penulis;
 
         if ($request->hasFile('gambar')) {
             // Delete old image
@@ -139,7 +151,7 @@ class BeritaKegiatanController extends Controller
 
         $beritaKegiatan->update($data);
 
-        return back()->with('message', 'Berita/Kegiatan berhasil diperbarui!');
+        return response()->json(['success' => true, 'message' => 'Berita/Kegiatan berhasil diperbarui!']);
     }
 
     public function destroy(BeritaKegiatan $beritaKegiatan)
@@ -150,6 +162,6 @@ class BeritaKegiatanController extends Controller
         
         $beritaKegiatan->delete();
 
-        return back()->with('message', 'Berita/Kegiatan berhasil dihapus!');
+        return response()->json(['success' => true, 'message' => 'Berita/Kegiatan berhasil dihapus!']);
     }
 } 

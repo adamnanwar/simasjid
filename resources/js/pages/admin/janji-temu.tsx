@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertModal } from '@/components/ui/alert-modal';
-import { Calendar, Clock, User, Phone, Mail, Check, X, Eye, Plus, Edit, Trash2, Settings } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, Check, X, Filter, Search, Plus, Edit, Trash2, Settings } from 'lucide-react';
 import { router } from '@inertiajs/react';
+import { useAlert } from '@/hooks/use-alert';
 
 interface JanjiTemu {
     id: number;
@@ -27,7 +28,10 @@ interface Ustadz {
     name: string;
     specialization: string;
     experience: string;
-    schedule: string;
+    schedule: string; // For backward compatibility display
+    schedule_days: string[];
+    schedule_start_time: string;
+    schedule_end_time: string;
     phone?: string;
     email?: string;
     bio?: string;
@@ -45,14 +49,9 @@ export default function AdminJanjiTemu() {
     const [editingAppointment, setEditingAppointment] = useState<JanjiTemu | null>(null);
     const [editingUstadz, setEditingUstadz] = useState<Ustadz | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, id: number | null, type: 'appointment' | 'ustadz'}>({isOpen: false, id: null, type: 'appointment'});
 
-    // Alert Modal state
-    const [alertModal, setAlertModal] = useState({
-        isOpen: false,
-        type: 'info' as 'success' | 'error' | 'warning' | 'info',
-        title: '',
-        message: ''
-    });
+    const { alertState, showAlert, hideAlert } = useAlert();
 
     const [formData, setFormData] = useState({
         nama: '',
@@ -68,7 +67,9 @@ export default function AdminJanjiTemu() {
         name: '',
         specialization: '',
         experience: '',
-        schedule: '',
+        schedule_days: [] as string[],
+        schedule_start_time: '08:00',
+        schedule_end_time: '17:00',
         phone: '',
         email: '',
         bio: '',
@@ -79,16 +80,6 @@ export default function AdminJanjiTemu() {
         fetchAppointments();
         fetchUstadz();
     }, []);
-
-    // Function to show alert modal
-    const showAlert = (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => {
-        setAlertModal({
-            isOpen: true,
-            type,
-            title,
-            message
-        });
-    };
 
     const fetchAppointments = async () => {
         try {
@@ -210,24 +201,47 @@ export default function AdminJanjiTemu() {
         }
     };
 
-    const deleteAppointment = async (id: number) => {
-        if (confirm('Apakah Anda yakin ingin menghapus janji temu ini?')) {
-            try {
-                const response = await fetch(`/janji-temu/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    }
-                });
+    const handleDeleteConfirm = (id: number, type: 'appointment' | 'ustadz') => {
+        setDeleteConfirm({isOpen: true, id, type});
+    };
+
+    const handleDelete = async () => {
+        if (!deleteConfirm.id) return;
+        
+        try {
+            const url = deleteConfirm.type === 'appointment' 
+                ? `/janji-temu/${deleteConfirm.id}` 
+                : `/ustadz/${deleteConfirm.id}`;
                 
-                if (response.ok) {
-                    fetchAppointments();
-                    showAlert('success', 'Berhasil!', 'Janji temu berhasil dihapus');
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                 }
-            } catch (error) {
-                console.error('Error deleting appointment:', error);
-                showAlert('error', 'Terjadi Kesalahan', 'Terjadi kesalahan saat menghapus data');
+            });
+
+            if (response.ok) {
+                const message = deleteConfirm.type === 'appointment' 
+                    ? 'Janji temu berhasil dihapus!' 
+                    : 'Ustadz berhasil dihapus!';
+                showAlert('success', 'Berhasil!', message);
+                
+                if (deleteConfirm.type === 'appointment') {
+                    await fetchAppointments();
+                } else {
+                    await fetchUstadz();
+                }
+            } else {
+                const errorData = await response.json().catch(() => null);
+                showAlert('error', 'Gagal!', errorData?.message || 'Gagal menghapus data. Silakan coba lagi.');
             }
+        } catch (error) {
+            console.error('Error deleting:', error);
+            showAlert('error', 'Error!', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
+        } finally {
+            setDeleteConfirm({isOpen: false, id: null, type: 'appointment'});
         }
     };
 
@@ -236,45 +250,44 @@ export default function AdminJanjiTemu() {
         setSubmitting(true);
 
         try {
-            if (editingUstadz) {
-                // Update existing
-                const response = await fetch(`/ustadz/${editingUstadz.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    },
-                    body: JSON.stringify(ustadzFormData)
-                });
-                
-                if (response.ok) {
-                    showAlert('success', 'Berhasil!', 'Ustadz berhasil diperbarui!');
-                    setShowUstadzForm(false);
-                    setEditingUstadz(null);
-                    resetUstadzForm();
-                    fetchUstadz();
-                }
+            const formData = {
+                name: ustadzFormData.name,
+                specialization: ustadzFormData.specialization,
+                experience: ustadzFormData.experience,
+                schedule_days: ustadzFormData.schedule_days,
+                schedule_start_time: ustadzFormData.schedule_start_time,
+                schedule_end_time: ustadzFormData.schedule_end_time,
+                phone: ustadzFormData.phone,
+                email: ustadzFormData.email,
+                bio: ustadzFormData.bio,
+                active: ustadzFormData.active
+            };
+
+            const url = editingUstadz ? `/ustadz/${editingUstadz.id}` : '/ustadz';
+            const method = editingUstadz ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                const message = editingUstadz ? 'Ustadz berhasil diperbarui!' : 'Ustadz berhasil ditambahkan!';
+                showAlert('success', 'Berhasil!', message);
+                resetUstadzForm();
+                setShowUstadzForm(false);
+                await fetchUstadz();
             } else {
-                // Create new
-                const response = await fetch('/ustadz', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    },
-                    body: JSON.stringify(ustadzFormData)
-                });
-                
-                if (response.ok) {
-                    showAlert('success', 'Berhasil!', 'Ustadz berhasil ditambahkan!');
-                    setShowUstadzForm(false);
-                    resetUstadzForm();
-                    fetchUstadz();
-                }
+                const errorData = await response.json().catch(() => null);
+                showAlert('error', 'Gagal!', errorData?.message || 'Gagal menyimpan data ustadz.');
             }
         } catch (error) {
-            console.error('Error submitting ustadz form:', error);
-            showAlert('error', 'Terjadi Kesalahan', 'Terjadi kesalahan saat mengirim data');
+            console.error('Error submitting ustadz:', error);
+            showAlert('error', 'Error!', 'Terjadi kesalahan jaringan.');
         } finally {
             setSubmitting(false);
         }
@@ -285,60 +298,60 @@ export default function AdminJanjiTemu() {
             name: '',
             specialization: '',
             experience: '',
-            schedule: '',
+            schedule_days: [],
+            schedule_start_time: '08:00',
+            schedule_end_time: '17:00',
             phone: '',
             email: '',
             bio: '',
             active: true
         });
+        setEditingUstadz(null);
     };
 
     const handleEditUstadz = (ustadz: Ustadz) => {
-        console.log('Editing ustadz:', ustadz); // Debug log
         setEditingUstadz(ustadz);
+        
+        // Use structured data if available, otherwise parse from schedule string
+        let days: string[] = ustadz.schedule_days || [];
+        let startTime = ustadz.schedule_start_time || '08:00';
+        let endTime = ustadz.schedule_end_time || '17:00';
+        
+        // Fallback: parse from schedule string if structured data not available
+        if (days.length === 0 && ustadz.schedule) {
+            const scheduleMatch = ustadz.schedule.match(/^(.+):\s*(\d{2}:\d{2})-(\d{2}:\d{2})$/);
+            if (scheduleMatch) {
+                days = scheduleMatch[1].split(',').map(day => day.trim());
+                startTime = scheduleMatch[2];
+                endTime = scheduleMatch[3];
+            }
+        }
+
         setUstadzFormData({
             name: ustadz.name,
             specialization: ustadz.specialization,
             experience: ustadz.experience,
-            schedule: ustadz.schedule,
+            schedule_days: days,
+            schedule_start_time: startTime,
+            schedule_end_time: endTime,
             phone: ustadz.phone || '',
             email: ustadz.email || '',
             bio: ustadz.bio || '',
             active: ustadz.active
         });
-        // Ensure the modal is open
-        if (!showUstadzForm) {
-            setShowUstadzForm(true);
-        }
-        // Scroll to form
-        setTimeout(() => {
-            const formElement = document.getElementById('ustadz-form');
-            if (formElement) {
-                formElement.scrollIntoView({ behavior: 'smooth' });
-            }
-        }, 100);
+        setShowUstadzForm(true);
     };
 
-    const deleteUstadz = async (id: number) => {
-        if (confirm('Apakah Anda yakin ingin menghapus ustadz ini?')) {
-            try {
-                const response = await fetch(`/ustadz/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    }
-                });
-                
-                if (response.ok) {
-                    fetchUstadz();
-                    showAlert('success', 'Berhasil!', 'Ustadz berhasil dihapus');
-                }
-            } catch (error) {
-                console.error('Error deleting ustadz:', error);
-                showAlert('error', 'Terjadi Kesalahan', 'Terjadi kesalahan saat menghapus data');
-            }
-        }
+    const handleScheduleDayToggle = (day: string) => {
+        setUstadzFormData(prev => ({
+            ...prev,
+            schedule_days: prev.schedule_days.includes(day)
+                ? prev.schedule_days.filter(d => d !== day)
+                : [...prev.schedule_days, day]
+        }));
     };
+
+    const daysOfWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -570,7 +583,7 @@ export default function AdminJanjiTemu() {
                                                         <Edit className="w-3 h-3" />
                                                     </Button>
                                                     <Button
-                                                        onClick={() => deleteUstadz(ustadz.id)}
+                                                        onClick={() => handleDeleteConfirm(ustadz.id, 'ustadz')}
                                                         variant="outline"
                                                         size="sm"
                                                         className="text-red-600 hover:bg-red-50"
@@ -637,14 +650,64 @@ export default function AdminJanjiTemu() {
                                     />
                                 </div>
                                 <div>
-                                    <Label htmlFor="ustadz-schedule">Jadwal *</Label>
-                                    <Input
-                                        id="ustadz-schedule"
-                                        value={ustadzFormData.schedule}
-                                        onChange={(e) => setUstadzFormData({...ustadzFormData, schedule: e.target.value})}
-                                        placeholder="Contoh: Senin - Jumat: 08:00-17:00"
-                                        required
-                                    />
+                                    <Label htmlFor="ustadz-schedule">Jadwal Ketersediaan *</Label>
+                                    
+                                    {/* Days Selection */}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <Label className="text-sm font-medium">Hari Kerja:</Label>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {daysOfWeek.map((day) => (
+                                                    <button
+                                                        key={day}
+                                                        type="button"
+                                                        onClick={() => handleScheduleDayToggle(day)}
+                                                        className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                                                            ustadzFormData.schedule_days.includes(day)
+                                                                ? 'bg-emerald-600 text-white border-emerald-600'
+                                                                : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-300'
+                                                        }`}
+                                                    >
+                                                        {day}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Time Range */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="schedule-start">Jam Mulai:</Label>
+                                                <Input
+                                                    id="schedule-start"
+                                                    type="time"
+                                                    value={ustadzFormData.schedule_start_time}
+                                                    onChange={(e) => setUstadzFormData({...ustadzFormData, schedule_start_time: e.target.value})}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="schedule-end">Jam Selesai:</Label>
+                                                <Input
+                                                    id="schedule-end"
+                                                    type="time"
+                                                    value={ustadzFormData.schedule_end_time}
+                                                    onChange={(e) => setUstadzFormData({...ustadzFormData, schedule_end_time: e.target.value})}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Schedule Preview */}
+                                        {ustadzFormData.schedule_days.length > 0 && (
+                                            <div className="p-3 bg-gray-50 rounded-lg">
+                                                <Label className="text-sm font-medium text-gray-700">Preview Jadwal:</Label>
+                                                <p className="text-sm text-gray-600 mt-1">
+                                                    {ustadzFormData.schedule_days.join(', ')}: {ustadzFormData.schedule_start_time}-{ustadzFormData.schedule_end_time}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div>
                                     <Label htmlFor="ustadz-phone">Nomor Telepon</Label>
@@ -880,7 +943,7 @@ export default function AdminJanjiTemu() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => deleteAppointment(appointment.id)}
+                                                onClick={() => handleDeleteConfirm(appointment.id, 'appointment')}
                                                 className="text-red-600 hover:text-red-700"
                                             >
                                                 <Trash2 className="w-3 h-3 mr-1" />
@@ -910,11 +973,24 @@ export default function AdminJanjiTemu() {
 
             {/* Alert Modal */}
             <AlertModal
-                isOpen={alertModal.isOpen}
-                onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
-                type={alertModal.type}
-                title={alertModal.title}
-                message={alertModal.message}
+                isOpen={alertState.isOpen}
+                onClose={hideAlert}
+                type={alertState.type}
+                title={alertState.title}
+                message={alertState.message}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <AlertModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({isOpen: false, id: null, type: 'appointment'})}
+                type="warning"
+                title="Konfirmasi Hapus"
+                message={`Apakah Anda yakin ingin menghapus ${deleteConfirm.type === 'appointment' ? 'janji temu' : 'data ustadz'} ini? Tindakan ini tidak dapat dibatalkan.`}
+                confirmText="Hapus"
+                cancelText="Batal"
+                showCancel={true}
+                onConfirm={handleDelete}
             />
         </AdminLayout>
     );

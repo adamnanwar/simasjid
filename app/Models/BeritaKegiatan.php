@@ -15,8 +15,11 @@ class BeritaKegiatan extends Model
         'judul',
         'slug',
         'konten',
+        'ringkasan',
         'gambar',
+        'kategori',
         'jenis',
+        'status',
         'tanggal_kegiatan',
         'tanggal_publikasi',
         'penulis'

@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, User, Phone, Mail } from 'lucide-react';
 import { useForm, router } from '@inertiajs/react';
+import { AlertModal } from '@/components/ui/alert-modal';
+import { useAlert } from '@/hooks/use-alert';
 
 interface PengurusMasjid {
     id: number;
@@ -26,6 +28,9 @@ export default function AdminPengurusMasjid() {
     const [loading, setLoading] = useState(true);
     const [showDialog, setShowDialog] = useState(false);
     const [editingPengurus, setEditingPengurus] = useState<PengurusMasjid | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, id: number | null}>({isOpen: false, id: null});
+
+    const { alertState, showAlert, hideAlert } = useAlert();
 
     const { data, setData, post, processing, errors, reset } = useForm({
         nama: '',
@@ -115,17 +120,35 @@ export default function AdminPengurusMasjid() {
         }
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('Apakah Anda yakin ingin menghapus pengurus ini?')) {
-            fetch(`/pengurus-masjid/${id}`, {
+    const handleDeleteConfirm = (id: number) => {
+        setDeleteConfirm({isOpen: true, id});
+    };
+
+    const handleDelete = async () => {
+        if (!deleteConfirm.id) return;
+        
+        try {
+            const response = await fetch(`/pengurus-masjid/${deleteConfirm.id}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     'Accept': 'application/json',
+                    'Content-Type': 'application/json',
                 }
-            }).then(() => {
-                fetchPengurus();
             });
+
+            if (response.ok) {
+                showAlert('success', 'Berhasil!', 'Pengurus berhasil dihapus!');
+                await fetchPengurus();
+            } else {
+                const errorData = await response.json().catch(() => null);
+                showAlert('error', 'Gagal!', errorData?.message || 'Gagal menghapus pengurus. Silakan coba lagi.');
+            }
+        } catch (error) {
+            console.error('Error deleting pengurus:', error);
+            showAlert('error', 'Error!', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
+        } finally {
+            setDeleteConfirm({isOpen: false, id: null});
         }
     };
 
@@ -340,7 +363,7 @@ export default function AdminPengurusMasjid() {
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => handleDelete(person.id)}
+                                    onClick={() => handleDeleteConfirm(person.id)}
                                     className="text-red-600 hover:text-red-700"
                                 >
                                     <Trash2 className="w-3 h-3" />
@@ -363,6 +386,28 @@ export default function AdminPengurusMasjid() {
                     </Button>
                 </div>
             )}
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertState.isOpen}
+                onClose={hideAlert}
+                type={alertState.type}
+                title={alertState.title}
+                message={alertState.message}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <AlertModal
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({isOpen: false, id: null})}
+                type="warning"
+                title="Konfirmasi Hapus"
+                message="Apakah Anda yakin ingin menghapus data pengurus ini? Tindakan ini tidak dapat dibatalkan."
+                confirmText="Hapus"
+                cancelText="Batal"
+                showCancel={true}
+                onConfirm={handleDelete}
+            />
         </AdminLayout>
     );
 } 
