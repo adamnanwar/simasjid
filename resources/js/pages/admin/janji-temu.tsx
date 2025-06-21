@@ -99,7 +99,7 @@ export default function AdminJanjiTemu() {
         try {
             // Add cache busting parameter
             const timestamp = new Date().getTime();
-            const response = await fetch(`/api/ustadz?_t=${timestamp}`);
+            const response = await fetch(`/ustadz?_t=${timestamp}`);
             const result = await response.json();
             if (result.success) {
                 setUstadzList(result.data);
@@ -213,7 +213,7 @@ export default function AdminJanjiTemu() {
         try {
             const url = deleteConfirm.type === 'appointment' 
                 ? `/janji-temu/${deleteConfirm.id}` 
-                : `/api/ustadz/${deleteConfirm.id}`;
+                : `/ustadz/${deleteConfirm.id}`;
 
             const formData = new FormData();
             formData.append('_method', 'DELETE');
@@ -276,7 +276,7 @@ export default function AdminJanjiTemu() {
                 formData.append('_method', 'PUT');
             }
 
-            const url = editingUstadz ? `/api/ustadz/${editingUstadz.id}` : '/api/ustadz';
+            const url = editingUstadz ? `/ustadz/${editingUstadz.id}` : '/ustadz';
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -559,13 +559,17 @@ export default function AdminJanjiTemu() {
                                         console.log('Adding new ustadz'); // Debug log
                                         setEditingUstadz(null);
                                         resetUstadzForm();
-                                        // Scroll to form
+                                        // Scroll to form safely
                                         setTimeout(() => {
-                                            const formElement = document.getElementById('ustadz-form');
-                                            if (formElement) {
-                                                formElement.scrollIntoView({ behavior: 'smooth' });
+                                            try {
+                                                const formElement = document.getElementById('ustadz-form');
+                                                if (formElement && typeof formElement.scrollIntoView === 'function') {
+                                                    formElement.scrollIntoView({ behavior: 'smooth' });
+                                                }
+                                            } catch (error) {
+                                                console.warn('ScrollIntoView not supported:', error);
                                             }
-                                        }, 100);
+                                        }, 200);
                                     }}
                                     className="bg-green-600 hover:bg-green-700"
                                     size="sm"

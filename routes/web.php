@@ -131,6 +131,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('pengurus-masjid/{pengurusMasjid}', [PengurusMasjidController::class, 'update'])->name('pengurus-masjid.update');
     Route::delete('pengurus-masjid/{pengurusMasjid}', [PengurusMasjidController::class, 'destroy'])->name('pengurus-masjid.destroy');
     
+    Route::get('ustadz', [UstadzController::class, 'index'])->name('ustadz.index');
     Route::post('ustadz', [UstadzController::class, 'store'])->name('ustadz.store');
     Route::put('ustadz/{ustadz}', [UstadzController::class, 'update'])->name('ustadz.update');
     Route::delete('ustadz/{ustadz}', [UstadzController::class, 'destroy'])->name('ustadz.destroy');
