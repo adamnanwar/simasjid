@@ -213,15 +213,18 @@ export default function AdminJanjiTemu() {
         try {
             const url = deleteConfirm.type === 'appointment' 
                 ? `/janji-temu/${deleteConfirm.id}` 
-                : `/ustadz/${deleteConfirm.id}`;
+                : `/api/ustadz/${deleteConfirm.id}`;
+
+            const formData = new FormData();
+            formData.append('_method', 'DELETE');
                 
             const response = await fetch(url, {
-                method: 'DELETE',
+                method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
+                },
+                body: formData
             });
 
             if (response.ok) {
@@ -252,29 +255,36 @@ export default function AdminJanjiTemu() {
         setSubmitting(true);
 
         try {
-            const formData = {
-                name: ustadzFormData.name,
-                specialization: ustadzFormData.specialization,
-                experience: ustadzFormData.experience,
-                schedule_days: ustadzFormData.schedule_days,
-                schedule_start_time: ustadzFormData.schedule_start_time,
-                schedule_end_time: ustadzFormData.schedule_end_time,
-                phone: ustadzFormData.phone,
-                email: ustadzFormData.email,
-                bio: ustadzFormData.bio,
-                active: ustadzFormData.active
-            };
+            const formData = new FormData();
+            formData.append('name', ustadzFormData.name);
+            formData.append('specialization', ustadzFormData.specialization);
+            formData.append('experience', ustadzFormData.experience);
+            
+            // Append schedule_days as individual array items
+            ustadzFormData.schedule_days.forEach((day, index) => {
+                formData.append(`schedule_days[${index}]`, day);
+            });
+            
+            formData.append('schedule_start_time', ustadzFormData.schedule_start_time);
+            formData.append('schedule_end_time', ustadzFormData.schedule_end_time);
+            formData.append('phone', ustadzFormData.phone);
+            formData.append('email', ustadzFormData.email);
+            formData.append('bio', ustadzFormData.bio);
+            formData.append('active', ustadzFormData.active ? '1' : '0');
 
-            const url = editingUstadz ? `/ustadz/${editingUstadz.id}` : '/ustadz';
-            const method = editingUstadz ? 'PUT' : 'POST';
+            if (editingUstadz) {
+                formData.append('_method', 'PUT');
+            }
+
+            const url = editingUstadz ? `/api/ustadz/${editingUstadz.id}` : '/api/ustadz';
 
             const response = await fetch(url, {
-                method: method,
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: formData
             });
 
             if (response.ok) {

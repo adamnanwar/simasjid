@@ -93,6 +93,9 @@ Route::prefix('api')->group(function () {
     
     // Ustadz API
     Route::get('ustadz', [UstadzController::class, 'index'])->name('api.ustadz.index');
+    Route::post('ustadz', [UstadzController::class, 'store'])->name('api.ustadz.store');
+    Route::put('ustadz/{ustadz}', [UstadzController::class, 'update'])->name('api.ustadz.update');
+    Route::delete('ustadz/{ustadz}', [UstadzController::class, 'destroy'])->name('api.ustadz.destroy');
     
     // Laporan API
     Route::get('laporan-kas', [LaporanKasController::class, 'apiIndex'])->name('api.laporan-kas.index');
