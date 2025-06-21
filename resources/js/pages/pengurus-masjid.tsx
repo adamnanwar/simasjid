@@ -26,7 +26,9 @@ export default function PengurusMasjidPage() {
 
     const fetchPengurus = async () => {
         try {
-            const response = await fetch('/api/pengurus-masjid');
+            // Add cache busting parameter
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/pengurus-masjid?_t=${timestamp}`);
             const data = await response.json();
             if (data.success) {
                 setPengurus(data.data);

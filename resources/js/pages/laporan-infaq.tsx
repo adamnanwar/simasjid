@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import MainLayout from '@/layouts/main-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,14 +38,92 @@ interface LaporanInfaqProps {
 }
 
 export default function LaporanInfaq({ 
-    donations, 
-    summary, 
-    topDonors, 
-    donationsByProgram, 
-    donationsByMethod, 
-    filters 
+    donations: initialDonations, 
+    summary: initialSummary, 
+    topDonors: initialTopDonors, 
+    donationsByProgram: initialDonationsByProgram, 
+    donationsByMethod: initialDonationsByMethod, 
+    filters: initialFilters 
 }: LaporanInfaqProps) {
     const [selectedCategory, setSelectedCategory] = useState('semua');
+    const [donations, setDonations] = useState(initialDonations || []);
+    const [summary, setSummary] = useState(initialSummary || {
+        totalInfaq: 0,
+        totalSedekah: 0,
+        totalZakat: 0,
+        totalDonasi: 0,
+        totalDonatur: 0,
+        totalTransaksi: 0
+    });
+    const [topDonors, setTopDonors] = useState(initialTopDonors || []);
+    const [donationsByProgram, setDonationsByProgram] = useState(initialDonationsByProgram || []);
+    const [donationsByMethod, setDonationsByMethod] = useState(initialDonationsByMethod || []);
+    const [loading, setLoading] = useState(false);
+
+    // Fetch fresh data from API
+    useEffect(() => {
+        fetchDonationData();
+    }, []);
+
+    const fetchDonationData = async () => {
+        setLoading(true);
+        try {
+            // Add cache busting parameter and get all data
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/laporan-infaq?per_page=1000&_t=${timestamp}`);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                setDonations(result.data);
+                
+                // Calculate summary from fresh data
+                const totalInfaq = result.data.filter((d: any) => d.kategori === 'Infaq').reduce((sum: number, d: any) => sum + parseFloat(d.jumlah), 0);
+                const totalSedekah = result.data.filter((d: any) => d.kategori === 'Sedekah').reduce((sum: number, d: any) => sum + parseFloat(d.jumlah), 0);
+                const totalZakat = result.data.filter((d: any) => d.kategori === 'Zakat').reduce((sum: number, d: any) => sum + parseFloat(d.jumlah), 0);
+                const totalDonasi = totalInfaq + totalSedekah + totalZakat;
+                const uniqueDonors = new Set(result.data.filter((d: any) => !d.anonim).map((d: any) => d.nama_donatur));
+                
+                setSummary({
+                    totalInfaq,
+                    totalSedekah,
+                    totalZakat,
+                    totalDonasi,
+                    totalDonatur: uniqueDonors.size,
+                    totalTransaksi: result.data.length
+                });
+
+                // Calculate top donors from fresh data
+                const donorMap = new Map();
+                result.data.filter((d: any) => !d.anonim).forEach((d: any) => {
+                    const name = d.nama_donatur;
+                    if (donorMap.has(name)) {
+                        donorMap.set(name, {
+                            nama_donatur: name,
+                            total_donasi: donorMap.get(name).total_donasi + parseFloat(d.jumlah),
+                            jumlah_donasi: donorMap.get(name).jumlah_donasi + 1
+                        });
+                    } else {
+                        donorMap.set(name, {
+                            nama_donatur: name,
+                            total_donasi: parseFloat(d.jumlah),
+                            jumlah_donasi: 1
+                        });
+                    }
+                });
+                
+                const sortedTopDonors = Array.from(donorMap.values())
+                    .sort((a, b) => b.total_donasi - a.total_donasi)
+                    .slice(0, 10);
+                
+                setTopDonors(sortedTopDonors);
+            }
+        } catch (error) {
+            console.error('Error fetching donation data:', error);
+            // Keep initial data if API fails
+        } finally {
+            setLoading(false);
+        }
+    };
     
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('id-ID', {
@@ -85,6 +163,27 @@ export default function LaporanInfaq({
             color: 'text-orange-600 bg-orange-100'
         }
     ];
+
+    // Filter donations based on selected category
+    const filteredDonations = selectedCategory === 'semua' 
+        ? donations 
+        : donations.filter((donation: any) => donation.kategori?.toLowerCase() === selectedCategory);
+
+    if (loading) {
+        return (
+            <MainLayout>
+                <Head title="Laporan Infaq & Sedekah - Sistem Informasi Masjid Al-Ikhlash" />
+                <div className="min-h-screen bg-gray-50 py-8">
+                    <div className="mx-auto max-w-7xl px-6 sm:px-12 lg:px-16">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+                            <p className="mt-4 text-gray-600">Memuat data donasi...</p>
+                        </div>
+                    </div>
+                </div>
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
@@ -246,12 +345,7 @@ export default function LaporanInfaq({
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
-                                        {donations && donations.length > 0 ? donations
-                                            .filter(donation => {
-                                                if (selectedCategory === 'semua') return true;
-                                                return donation.kategori.toLowerCase() === selectedCategory;
-                                            })
-                                            .map((donation) => (
+                                        {filteredDonations && filteredDonations.length > 0 ? filteredDonations.map((donation) => (
                                             <div key={donation.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-3 mb-2">

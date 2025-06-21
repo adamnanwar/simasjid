@@ -52,7 +52,9 @@ export default function AdminKeuanganDonasi() {
 
     const fetchDonations = async () => {
         try {
-            const response = await fetch('/api/laporan-infaq');
+            // Add cache busting parameter
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/laporan-infaq?_t=${timestamp}`);
             const result = await response.json();
             console.log('Donasi API Response:', result); // Debug log
             if (result.success && result.data) {
@@ -333,7 +335,7 @@ export default function AdminKeuanganDonasi() {
                                         id="telepon"
                                         value={data.telepon}
                                         onChange={(e) => setData('telepon', e.target.value)}
-                                        placeholder="+62 812-3456-7890 (opsional)"
+                                        placeholder="0812-3456-7890 (opsional)"
                                     />
                                     {errors.telepon && <p className="text-red-500 text-sm mt-1">{errors.telepon}</p>}
                                 </div>

@@ -17,7 +17,7 @@ class PengurusMasjidSeeder extends Seeder
             [
                 'nama' => 'John Carter',
                 'jabatan' => 'CEO & Founder',
-                'telepon' => '+62 812-3456-7890',
+                'telepon' => '0812-3456-7890',
                 'email' => 'john@masjid.com',
                 'deskripsi' => 'Facilisi nisl interdum a eu maurisole mus etiam nec mauris dolor sit amet consectur siler consectur ole.',
                 'urutan' => 1,
@@ -26,7 +26,7 @@ class PengurusMasjidSeeder extends Seeder
             [
                 'nama' => 'Sophie Moore',
                 'jabatan' => 'VP of Design',
-                'telepon' => '+62 813-4567-8901',
+                'telepon' => '0813-4567-8901',
                 'email' => 'sophie@masjid.com',
                 'deskripsi' => 'Semper phasellus eget eu egestas odio pretium aliquam ipsum quam augue tortor proin magna at.',
                 'urutan' => 2,
@@ -35,7 +35,7 @@ class PengurusMasjidSeeder extends Seeder
             [
                 'nama' => 'Matt Cannon',
                 'jabatan' => 'VP of Marketing',
-                'telepon' => '+62 814-5678-9012',
+                'telepon' => '0814-5678-9012',
                 'email' => 'matt@masjid.com',
                 'deskripsi' => 'Ac platea arcu mi vulputate fames euismod nunc diam sit quisque fermentum dignissim sed ut.',
                 'urutan' => 3,
@@ -44,7 +44,7 @@ class PengurusMasjidSeeder extends Seeder
             [
                 'nama' => 'Andy Smith',
                 'jabatan' => 'VP of Development',
-                'telepon' => '+62 815-6789-0123',
+                'telepon' => '0815-6789-0123',
                 'email' => 'andy@masjid.com',
                 'deskripsi' => 'Ornare cras vestibulum ut lectus enim amet sit diam velit pulvinar sem tristique mattis odio iaculis.',
                 'urutan' => 4,

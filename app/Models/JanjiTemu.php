@@ -16,6 +16,7 @@ class JanjiTemu extends Model
         'tanggal',
         'waktu',
         'keperluan',
+        'ustadz_id',
         'status',
     ];
 
@@ -23,4 +24,9 @@ class JanjiTemu extends Model
         'tanggal' => 'date',
         'waktu' => 'datetime:H:i',
     ];
+
+    public function ustadz()
+    {
+        return $this->belongsTo(Ustadz::class);
+    }
 }

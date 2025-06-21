@@ -13,7 +13,7 @@ class JanjiTemuController extends Controller
     public function index()
     {
         // Mengurutkan berdasarkan tanggal dan waktu terdekat dengan waktu sekarang
-        $janjiTemu = JanjiTemu::orderByRaw("
+        $janjiTemu = JanjiTemu::with('ustadz')->orderByRaw("
             ABS(TIMESTAMPDIFF(SECOND, CONCAT(tanggal, ' ', waktu, ':00'), NOW()))
         ")->paginate(10);
 
@@ -29,7 +29,7 @@ class JanjiTemuController extends Controller
     // API Methods for Frontend
     public function apiIndex(Request $request)
     {
-        $query = JanjiTemu::orderByRaw("
+        $query = JanjiTemu::with('ustadz')->orderByRaw("
             ABS(TIMESTAMPDIFF(SECOND, CONCAT(tanggal, ' ', waktu, ':00'), NOW()))
         ");
         
@@ -58,7 +58,9 @@ class JanjiTemuController extends Controller
                 'per_page' => $janjiTemu->perPage(),
                 'total' => $janjiTemu->total(),
             ]
-        ]);
+        ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+          ->header('Pragma', 'no-cache')
+          ->header('Expires', '0');
     }
     
     public function apiStore(Request $request)
@@ -70,6 +72,7 @@ class JanjiTemuController extends Controller
             'tanggal' => 'required|date|after_or_equal:today',
             'waktu' => 'required|date_format:H:i',
             'keperluan' => 'required|string',
+            'ustadz_id' => 'required|exists:ustadzs,id',
         ]);
 
         $janjiTemu = JanjiTemu::create([
@@ -79,6 +82,7 @@ class JanjiTemuController extends Controller
             'tanggal' => $request->tanggal,
             'waktu' => $request->waktu,
             'keperluan' => $request->keperluan,
+            'ustadz_id' => $request->ustadz_id,
             'status' => 'pending',
         ]);
 
@@ -98,6 +102,7 @@ class JanjiTemuController extends Controller
             'tanggal' => 'required|date|after_or_equal:today',
             'waktu' => 'required|date_format:H:i',
             'keperluan' => 'required|string',
+            'ustadz_id' => 'required|exists:ustadzs,id',
         ]);
 
         JanjiTemu::create([
@@ -107,6 +112,7 @@ class JanjiTemuController extends Controller
             'tanggal' => $request->tanggal,
             'waktu' => $request->waktu,
             'keperluan' => $request->keperluan,
+            'ustadz_id' => $request->ustadz_id,
             'status' => 'pending',
         ]);
 

@@ -48,7 +48,9 @@ export default function AdminPengurusMasjid() {
 
     const fetchPengurus = async () => {
         try {
-            const response = await fetch('/api/pengurus-masjid');
+            // Add cache busting parameter
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/pengurus-masjid?_t=${timestamp}`);
             const result = await response.json();
             if (result.success) {
                 setPengurus(result.data);
@@ -124,32 +126,20 @@ export default function AdminPengurusMasjid() {
         setDeleteConfirm({isOpen: true, id});
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (!deleteConfirm.id) return;
         
-        try {
-            const response = await fetch(`/pengurus-masjid/${deleteConfirm.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            if (response.ok) {
+        router.delete(`/pengurus-masjid/${deleteConfirm.id}`, {
+            onSuccess: () => {
                 showAlert('success', 'Berhasil!', 'Pengurus berhasil dihapus!');
-                await fetchPengurus();
-            } else {
-                const errorData = await response.json().catch(() => null);
-                showAlert('error', 'Gagal!', errorData?.message || 'Gagal menghapus pengurus. Silakan coba lagi.');
+                fetchPengurus();
+                setDeleteConfirm({isOpen: false, id: null});
+            },
+            onError: (errors) => {
+                showAlert('error', 'Gagal!', 'Gagal menghapus pengurus. Silakan coba lagi.');
+                setDeleteConfirm({isOpen: false, id: null});
             }
-        } catch (error) {
-            console.error('Error deleting pengurus:', error);
-            showAlert('error', 'Error!', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
-        } finally {
-            setDeleteConfirm({isOpen: false, id: null});
-        }
+        });
     };
 
     const getInitials = (nama: string) => {
@@ -228,7 +218,7 @@ export default function AdminPengurusMasjid() {
                                         id="telepon"
                                         value={data.telepon}
                                         onChange={(e) => setData('telepon', e.target.value)}
-                                        placeholder="+62 812-3456-7890"
+                                        placeholder="0812-3456-7890"
                                     />
                                     {errors.telepon && <p className="text-red-500 text-sm mt-1">{errors.telepon}</p>}
                                 </div>

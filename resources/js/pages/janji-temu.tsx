@@ -66,6 +66,7 @@ interface TimeSlot {
 
 export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuPageProps) {
     const [showBookingForm, setShowBookingForm] = useState(false);
+    const [selectedUstadz, setSelectedUstadz] = useState<Ustadz | null>(null);
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedTime, setSelectedTime] = useState('');
     const [appointments, setAppointments] = useState<JanjiTemu[]>(initialData?.data || []);
@@ -91,7 +92,9 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
     const fetchAppointments = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/janji-temu');
+            // Add cache busting parameter
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/janji-temu?_t=${timestamp}`);
             const result = await response.json();
             if (result.success) {
                 setAppointments(result.data);
@@ -103,72 +106,78 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
         }
     };
 
-    // Generate time slots based on ustadz schedules and selected date
+    // Generate time slots based on selected ustadz schedule and date
     const generateTimeSlots = (): TimeSlot[] => {
         const slots: TimeSlot[] = [];
         
-        // Generate time slots from 08:00 to 20:00 in 1-hour intervals
-        for (let hour = 8; hour <= 20; hour++) {
-            const timeString = `${hour.toString().padStart(2, '0')}:00`;
+        if (!selectedUstadz || !selectedDate) return slots;
+        
+        // Get ustadz schedule data
+        let days: string[] = selectedUstadz.schedule_days || [];
+        let startTime = selectedUstadz.schedule_start_time || '';
+        let endTime = selectedUstadz.schedule_end_time || '';
+        
+        // Fallback: parse from schedule string if structured data not available
+        if (days.length === 0 && selectedUstadz.schedule) {
+            const scheduleMatch = selectedUstadz.schedule.match(/(.+):\s*(\d{2}:\d{2})-(\d{2}:\d{2})/);
+            if (scheduleMatch) {
+                const [, daysStr, start, end] = scheduleMatch;
+                days = daysStr.split(',').map(d => d.trim());
+                startTime = start;
+                endTime = end;
+            }
+        }
+        
+        if (days.length === 0 || !startTime || !endTime) return slots;
+        
+        // Check if selected date is within working days
+        const selectedDateObj = new Date(selectedDate);
+        const dayMapping: { [key: string]: string } = {
+            'Monday': 'Senin',
+            'Tuesday': 'Selasa', 
+            'Wednesday': 'Rabu',
+            'Thursday': 'Kamis',
+            'Friday': 'Jumat',
+            'Saturday': 'Sabtu',
+            'Sunday': 'Minggu'
+        };
+        const indonesianDay = dayMapping[selectedDateObj.toLocaleDateString('en-US', { weekday: 'long' })];
+        
+        if (!days.includes(indonesianDay)) {
+            return slots; // Return empty if ustadz not available on this day
+        }
+        
+        // Parse start and end times
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
+        
+        // Generate time slots in 30-minute intervals
+        let currentHour = startHour;
+        let currentMinute = startMinute;
+        
+        while (currentHour < endHour || (currentHour === endHour && currentMinute < endMinute)) {
+            const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
             
-            // Find ustadz available at this time
-            const availableUstadz = ustadz.find(u => {
-                if (!u.active) return false;
-                
-                // Use structured data if available, otherwise parse schedule string
-                let days: string[] = u.schedule_days || [];
-                let startTime = u.schedule_start_time || '';
-                let endTime = u.schedule_end_time || '';
-                
-                // Fallback: parse from schedule string if structured data not available
-                if (days.length === 0 && u.schedule) {
-                    const scheduleMatch = u.schedule.match(/(.+):\s*(\d{2}:\d{2})-(\d{2}:\d{2})/);
-                    if (scheduleMatch) {
-                        const [, daysStr, start, end] = scheduleMatch;
-                        days = daysStr.split(',').map(d => d.trim());
-                        startTime = start;
-                        endTime = end;
-                    }
-                }
-                
-                if (days.length === 0 || !startTime || !endTime) return false;
-                
-                // Check if selected date is within working days
-                if (selectedDate) {
-                    const selectedDateObj = new Date(selectedDate);
-                    const dayMapping: { [key: string]: string } = {
-                        'Monday': 'Senin',
-                        'Tuesday': 'Selasa', 
-                        'Wednesday': 'Rabu',
-                        'Thursday': 'Kamis',
-                        'Friday': 'Jumat',
-                        'Saturday': 'Sabtu',
-                        'Sunday': 'Minggu'
-                    };
-                    const indonesianDay = dayMapping[selectedDateObj.toLocaleDateString('en-US', { weekday: 'long' })];
-                    
-                    if (!days.includes(indonesianDay)) {
-                        return false;
-                    }
-                }
-                
-                // Check if time is within working hours
-                return timeString >= startTime && timeString <= endTime;
-            });
-
             // Check if slot is already booked
-            const isBooked = selectedDate && appointments.some(appointment => 
+            const isBooked = appointments.some(appointment => 
                 appointment.tanggal === selectedDate && 
                 appointment.waktu === timeString &&
                 appointment.status !== 'rejected'
             );
 
-            if (availableUstadz && !isBooked) {
+            if (!isBooked) {
                 slots.push({
                     time: timeString,
                     available: true,
-                    ustadz: availableUstadz.name
+                    ustadz: selectedUstadz.name
                 });
+            }
+            
+            // Increment by 30 minutes
+            currentMinute += 30;
+            if (currentMinute >= 60) {
+                currentMinute = 0;
+                currentHour += 1;
             }
         }
         
@@ -218,6 +227,12 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
 
     const handleSubmitBooking = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (!selectedUstadz || !selectedDate || !selectedTime) {
+            showAlert('error', 'Data Tidak Lengkap', 'Silakan lengkapi semua data yang diperlukan');
+            return;
+        }
+        
         setSubmitting(true);
 
         const formData = new FormData();
@@ -227,6 +242,7 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
         formData.append('tanggal', selectedDate);
         formData.append('waktu', selectedTime);
         formData.append('keperluan', bookingForm.keperluan);
+        formData.append('ustadz_id', selectedUstadz.id.toString());
 
         try {
             router.post('/janji-temu', formData, {
@@ -240,6 +256,7 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
                         telepon: '',
                         keperluan: ''
                     });
+                    setSelectedUstadz(null);
                     setSelectedDate('');
                     setSelectedTime('');
                     // Refresh data
@@ -304,106 +321,202 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
                             </CardHeader>
                             <CardContent className="p-6">
                                 <form onSubmit={handleSubmitBooking} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor="nama">Nama Lengkap *</Label>
-                                            <Input
-                                                id="nama"
-                                                value={bookingForm.nama}
-                                                onChange={(e) => setBookingForm({...bookingForm, nama: e.target.value})}
-                                                placeholder="Masukkan nama lengkap"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="telepon">Nomor Telepon *</Label>
-                                            <Input
-                                                id="telepon"
-                                                value={bookingForm.telepon}
-                                                onChange={(e) => setBookingForm({...bookingForm, telepon: e.target.value})}
-                                                placeholder="08xx-xxxx-xxxx"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="email">Email</Label>
-                                            <Input
-                                                id="email"
-                                                type="email"
-                                                value={bookingForm.email}
-                                                onChange={(e) => setBookingForm({...bookingForm, email: e.target.value})}
-                                                placeholder="email@example.com"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="tanggal">Tanggal *</Label>
-                                            <Input
-                                                id="tanggal"
-                                                type="date"
-                                                value={selectedDate}
-                                                onChange={(e) => {
-                                                    setSelectedDate(e.target.value);
-                                                    setSelectedTime(''); // Reset time when date changes
-                                                }}
-                                                min={new Date().toISOString().split('T')[0]}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <Label htmlFor="waktu">Waktu *</Label>
-                                            {selectedDate ? (
-                                                <select
-                                                    id="waktu"
-                                                    value={selectedTime}
-                                                    onChange={(e) => setSelectedTime(e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-md"
+                                    {/* Step 1: Personal Information */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                            <User className="h-5 w-5" />
+                                            1. Informasi Pribadi
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor="nama">Nama Lengkap *</Label>
+                                                <Input
+                                                    id="nama"
+                                                    value={bookingForm.nama}
+                                                    onChange={(e) => setBookingForm({...bookingForm, nama: e.target.value})}
+                                                    placeholder="Masukkan nama lengkap"
                                                     required
-                                                >
-                                                    <option value="">Pilih waktu yang tersedia</option>
-                                                    {timeSlots.map((slot) => (
-                                                        <option 
-                                                            key={slot.time} 
-                                                            value={slot.time}
-                                                        >
-                                                            {slot.time} - dengan {slot.ustadz}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            ) : (
-                                                <div className="p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                                                    Pilih tanggal terlebih dahulu
-                                                </div>
-                                            )}
-                                            
-                                            {selectedDate && timeSlots.length === 0 && (
-                                                <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
-                                                    <p className="text-sm text-orange-700">
-                                                        Tidak ada waktu yang tersedia untuk tanggal ini. Silakan pilih tanggal lain.
-                                                    </p>
-                                                </div>
-                                            )}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="telepon">Nomor Telepon *</Label>
+                                                <Input
+                                                    id="telepon"
+                                                    value={bookingForm.telepon}
+                                                    onChange={(e) => setBookingForm({...bookingForm, telepon: e.target.value})}
+                                                    placeholder="08xx-xxxx-xxxx"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <Label htmlFor="email">Email</Label>
+                                                <Input
+                                                    id="email"
+                                                    type="email"
+                                                    value={bookingForm.email}
+                                                    onChange={(e) => setBookingForm({...bookingForm, email: e.target.value})}
+                                                    placeholder="email@example.com"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <Label htmlFor="keperluan">Keperluan *</Label>
-                                        <textarea
-                                            id="keperluan"
-                                            value={bookingForm.keperluan}
-                                            onChange={(e) => setBookingForm({...bookingForm, keperluan: e.target.value})}
-                                            placeholder="Jelaskan secara singkat hal yang ingin dikonsultasikan"
-                                            rows={3}
-                                            className="w-full p-2 border border-gray-300 rounded-md"
-                                            required
-                                        />
+
+                                    {/* Step 2: Choose Ustadz */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                            <BookOpen className="h-5 w-5" />
+                                            2. Pilih Ustadz
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {ustadz.filter(u => u.active).map((u) => (
+                                                <div
+                                                    key={u.id}
+                                                    onClick={() => {
+                                                        setSelectedUstadz(u);
+                                                        setSelectedDate(''); // Reset date when ustadz changes
+                                                        setSelectedTime(''); // Reset time when ustadz changes
+                                                    }}
+                                                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                                                        selectedUstadz?.id === u.id
+                                                            ? 'border-teal-500 bg-teal-50'
+                                                            : 'border-gray-200 hover:border-teal-300'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex-1">
+                                                            <h4 className="font-semibold text-gray-900">{u.name}</h4>
+                                                            <p className="text-sm text-gray-600 mb-2">{u.specialization}</p>
+                                                            <p className="text-xs text-gray-500 mb-2">{u.experience}</p>
+                                                            <div className="flex items-center gap-1 text-xs text-teal-600">
+                                                                <Clock className="h-3 w-3" />
+                                                                {u.schedule}
+                                                            </div>
+                                                        </div>
+                                                        {selectedUstadz?.id === u.id && (
+                                                            <CheckCircle className="h-5 w-5 text-teal-500 flex-shrink-0" />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {!selectedUstadz && (
+                                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                                <p className="text-sm text-blue-700">
+                                                    Pilih ustadz terlebih dahulu untuk melihat jadwal yang tersedia
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex gap-3">
-                                        <Button type="submit" className="bg-teal-600 hover:bg-teal-700" disabled={submitting}>
+
+                                    {/* Step 3: Choose Date and Time */}
+                                    {selectedUstadz && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                                <Calendar className="h-5 w-5" />
+                                                3. Pilih Tanggal & Waktu
+                                            </h3>
+                                            <div className="bg-teal-50 p-4 rounded-lg">
+                                                <p className="text-sm text-teal-700 mb-2">
+                                                    <strong>Ustadz terpilih:</strong> {selectedUstadz.name}
+                                                </p>
+                                                <p className="text-sm text-teal-600">
+                                                    <strong>Jadwal tersedia:</strong> {selectedUstadz.schedule}
+                                                </p>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <Label htmlFor="tanggal">Tanggal *</Label>
+                                                    <Input
+                                                        id="tanggal"
+                                                        type="date"
+                                                        value={selectedDate}
+                                                        onChange={(e) => {
+                                                            setSelectedDate(e.target.value);
+                                                            setSelectedTime(''); // Reset time when date changes
+                                                        }}
+                                                        min={new Date().toISOString().split('T')[0]}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor="waktu">Waktu *</Label>
+                                                    {selectedDate ? (
+                                                        timeSlots.length > 0 ? (
+                                                            <select
+                                                                id="waktu"
+                                                                value={selectedTime}
+                                                                onChange={(e) => setSelectedTime(e.target.value)}
+                                                                className="w-full p-2 border border-gray-300 rounded-md"
+                                                                required
+                                                            >
+                                                                <option value="">Pilih waktu yang tersedia</option>
+                                                                {timeSlots.map((slot) => (
+                                                                    <option 
+                                                                        key={slot.time} 
+                                                                        value={slot.time}
+                                                                    >
+                                                                        {slot.time}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        ) : (
+                                                            <div className="p-2 border border-gray-300 rounded-md bg-red-50 text-red-700">
+                                                                {selectedUstadz.name} tidak tersedia pada tanggal ini
+                                                            </div>
+                                                        )
+                                                    ) : (
+                                                        <div className="p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
+                                                            Pilih tanggal terlebih dahulu
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Step 4: Purpose */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                            <Mail className="h-5 w-5" />
+                                            4. Keperluan Konsultasi
+                                        </h3>
+                                        <div>
+                                            <Label htmlFor="keperluan">Jelaskan keperluan konsultasi *</Label>
+                                            <textarea
+                                                id="keperluan"
+                                                value={bookingForm.keperluan}
+                                                onChange={(e) => setBookingForm({...bookingForm, keperluan: e.target.value})}
+                                                placeholder="Jelaskan secara singkat hal yang ingin dikonsultasikan, seperti: masalah fiqih, konseling keluarga, kajian Al-Quran, dll."
+                                                rows={4}
+                                                className="w-full p-3 border border-gray-300 rounded-md"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-4 border-t">
+                                                                                <Button 
+                                            type="submit" 
+                                            className="bg-teal-600 hover:bg-teal-700" 
+                                            disabled={submitting || !selectedUstadz || !selectedDate || !selectedTime}
+                                        >
                                             {submitting ? 'Memproses...' : 'Buat Janji Temu'}
                                         </Button>
                                         <Button 
                                             type="button" 
-                                            variant="outline" 
-                                            onClick={() => setShowBookingForm(false)}
+                                            variant="outline"
+                                            onClick={() => {
+                                                setShowBookingForm(false);
+                                                setSelectedUstadz(null);
+                                                setSelectedDate('');
+                                                setSelectedTime('');
+                                                setBookingForm({
+                                                    nama: '',
+                                                    email: '',
+                                                    telepon: '',
+                                                    keperluan: ''
+                                                });
+                                            }}
                                             disabled={submitting}
                                         >
                                             Batal

@@ -126,7 +126,9 @@ class LaporanInfaqController extends Controller
                 'per_page' => $donations->perPage(),
                 'total' => $donations->total(),
             ]
-        ]);
+        ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+          ->header('Pragma', 'no-cache')
+          ->header('Expires', '0');
     }
     
     public function apiStatistics(Request $request)
@@ -189,7 +191,9 @@ class LaporanInfaqController extends Controller
                 'donationsByMethod' => $donationsByMethod,
                 'recentDonations' => $recentDonations
             ]
-        ]);
+        ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+          ->header('Pragma', 'no-cache')
+          ->header('Expires', '0');
     }
 
     public function store(Request $request)
@@ -212,7 +216,7 @@ class LaporanInfaqController extends Controller
         $email = $request->email ?: 'hamba.allah@alikhlash.com';
         $phone = $request->phone ?: '-';
 
-        Donation::create([
+        $donation = Donation::create([
             'nama_donatur' => $nama_donatur,
             'email' => $email,
             'phone' => $phone,
@@ -225,6 +229,17 @@ class LaporanInfaqController extends Controller
             'anonim' => $request->boolean('anonim'),
             'description' => $request->description
         ]);
+
+        // Return JSON for API calls, redirect for web requests
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Donasi berhasil ditambahkan',
+                'data' => $donation
+            ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+              ->header('Pragma', 'no-cache')
+              ->header('Expires', '0');
+        }
 
         return redirect()->back()->with('success', 'Donasi berhasil ditambahkan');
     }
@@ -268,6 +283,16 @@ class LaporanInfaqController extends Controller
     public function destroy(Donation $donation)
     {
         $donation->delete();
+
+        // Return JSON response for API calls, redirect for form submissions
+        if (request()->expectsJson() || request()->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Donasi berhasil dihapus!'
+            ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+              ->header('Pragma', 'no-cache')
+              ->header('Expires', '0');
+        }
 
         return back()->with('message', 'Donasi berhasil dihapus!');
     }

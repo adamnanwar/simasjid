@@ -52,7 +52,9 @@ export default function AdminBerita() {
 
     const fetchNews = async () => {
         try {
-            const response = await fetch('/api/berita-kegiatan');
+            // Add cache busting parameter
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/berita-kegiatan?_t=${timestamp}`);
             const result = await response.json();
             console.log('Admin API Response:', result); // Debug log
             if (result.success && result.data && result.data.length > 0) {

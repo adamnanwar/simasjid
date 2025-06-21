@@ -97,7 +97,9 @@ export default function AdminJanjiTemu() {
 
     const fetchUstadz = async () => {
         try {
-            const response = await fetch('/api/ustadz');
+            // Add cache busting parameter
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/ustadz?_t=${timestamp}`);
             const result = await response.json();
             if (result.success) {
                 setUstadzList(result.data);

@@ -35,7 +35,9 @@ class PengurusMasjidController extends Controller
         return response()->json([
             'success' => true,
             'data' => $pengurusMasjid
-        ]);
+        ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+          ->header('Pragma', 'no-cache')
+          ->header('Expires', '0');
     }
 
     public function store(Request $request)
