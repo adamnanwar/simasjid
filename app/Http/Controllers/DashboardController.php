@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
+use App\Models\LaporanKas;
 use App\Models\Donation;
-use App\Models\Appointment;
+use App\Models\JanjiTemu;
 use App\Models\Ustadz;
 use App\Models\BeritaKegiatan;
 use Illuminate\Http\Request;
@@ -15,22 +15,20 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Total Kas (Pemasukan - Pengeluaran)
-        $totalPemasukan = Transaction::verified()->pemasukan()->sum('jumlah');
-        $totalPengeluaran = Transaction::verified()->pengeluaran()->sum('jumlah');
+        // Total Kas (Pemasukan - Pengeluaran) - Using LaporanKas model
+        $totalPemasukan = LaporanKas::where('jenis', 'masuk')->sum('jumlah');
+        $totalPengeluaran = LaporanKas::where('jenis', 'keluar')->sum('jumlah');
         $totalKas = $totalPemasukan - $totalPengeluaran;
         
         // Total Donasi (Infaq + Sedekah + Zakat)
         $totalDonasi = Donation::confirmed()->sum('jumlah');
         
-        // Total Janji Temu
-        $totalJanjiTemu = Appointment::count();
-        $janjiTemuPending = Appointment::pending()->count();
+        // Total Janji Temu - Using JanjiTemu model
+        $totalJanjiTemu = JanjiTemu::count();
+        $janjiTemuPending = JanjiTemu::where('status', 'pending')->count();
         
-        // Transaksi Recent (5 terbaru)
-        $recentTransactions = Transaction::with('user')
-            ->verified()
-            ->orderBy('tanggal', 'desc')
+        // Transaksi Recent (5 terbaru) - Using LaporanKas
+        $recentTransactions = LaporanKas::orderBy('tanggal', 'desc')
             ->take(5)
             ->get()
             ->map(function ($transaction) {
@@ -38,7 +36,7 @@ class DashboardController extends Controller
                     'id' => $transaction->id,
                     'description' => $transaction->keterangan,
                     'amount' => (float) $transaction->jumlah,
-                    'type' => $transaction->jenis === 'pemasukan' ? 'income' : 'expense',
+                    'type' => $transaction->jenis === 'masuk' ? 'income' : 'expense',
                     'date' => $transaction->tanggal->format('Y-m-d')
                 ];
             });
@@ -49,33 +47,31 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
             
-        // Upcoming Appointments
-        $upcomingAppointments = Appointment::with('ustadz')
-            ->where('date', '>=', Carbon::today())
-            ->orderBy('date')
-            ->orderBy('time')
+        // Upcoming Janji Temu - Using JanjiTemu model
+        $upcomingJanjiTemu = JanjiTemu::with('ustadz')
+            ->where('tanggal', '>=', Carbon::today())
+            ->orderBy('tanggal')
+            ->orderBy('waktu')
             ->take(5)
             ->get()
-            ->map(function ($appointment) {
+            ->map(function ($janjiTemu) {
                 return [
-                    'id' => $appointment->id,
-                    'name' => $appointment->nama,
-                    'topic' => $appointment->topik,
-                    'date' => $appointment->date->format('Y-m-d'),
-                    'time' => $appointment->time,
-                    'status' => $appointment->status === 'confirmed' ? 'confirmed' : 'pending'
+                    'id' => $janjiTemu->id,
+                    'name' => $janjiTemu->nama,
+                    'topic' => $janjiTemu->keperluan,
+                    'date' => $janjiTemu->tanggal->format('Y-m-d'),
+                    'time' => $janjiTemu->waktu ? $janjiTemu->waktu->format('H:i') : '',
+                    'status' => $janjiTemu->status === 'approved' ? 'confirmed' : 'pending'
                 ];
             });
             
-        // Statistik Bulanan
-        $monthlyIncome = Transaction::verified()
-            ->pemasukan()
+        // Statistik Bulanan - Using LaporanKas
+        $monthlyIncome = LaporanKas::where('jenis', 'masuk')
             ->whereMonth('tanggal', Carbon::now()->month)
             ->whereYear('tanggal', Carbon::now()->year)
             ->sum('jumlah');
             
-        $monthlyExpense = Transaction::verified()
-            ->pengeluaran()
+        $monthlyExpense = LaporanKas::where('jenis', 'keluar')
             ->whereMonth('tanggal', Carbon::now()->month)
             ->whereYear('tanggal', Carbon::now()->year)
             ->sum('jumlah');
@@ -91,37 +87,35 @@ class DashboardController extends Controller
             ],
             'recentTransactions' => $recentTransactions,
             'recentDonations' => $recentDonations,
-            'upcomingAppointments' => $upcomingAppointments
+            'upcomingAppointments' => $upcomingJanjiTemu
         ]);
     }
     
     // API Methods for Frontend
     public function apiStatistics()
     {
-        // Total Kas (Pemasukan - Pengeluaran)
-        $totalPemasukan = Transaction::verified()->pemasukan()->sum('jumlah');
-        $totalPengeluaran = Transaction::verified()->pengeluaran()->sum('jumlah');
+        // Total Kas (Pemasukan - Pengeluaran) - Using LaporanKas model
+        $totalPemasukan = LaporanKas::where('jenis', 'masuk')->sum('jumlah');
+        $totalPengeluaran = LaporanKas::where('jenis', 'keluar')->sum('jumlah');
         $totalKas = $totalPemasukan - $totalPengeluaran;
         
         // Total Donasi (Infaq + Sedekah + Zakat)
         $totalDonasi = Donation::confirmed()->sum('jumlah');
         
-        // Total Janji Temu
-        $totalJanjiTemu = Appointment::count();
-        $janjiTemuPending = Appointment::pending()->count();
+        // Total Janji Temu - Using JanjiTemu model
+        $totalJanjiTemu = JanjiTemu::count();
+        $janjiTemuPending = JanjiTemu::where('status', 'pending')->count();
         
         // Total Berita
         $totalBerita = BeritaKegiatan::count();
         
-        // Statistik Bulanan
-        $monthlyIncome = Transaction::verified()
-            ->pemasukan()
+        // Statistik Bulanan - Using LaporanKas
+        $monthlyIncome = LaporanKas::where('jenis', 'masuk')
             ->whereMonth('tanggal', Carbon::now()->month)
             ->whereYear('tanggal', Carbon::now()->year)
             ->sum('jumlah');
             
-        $monthlyExpense = Transaction::verified()
-            ->pengeluaran()
+        $monthlyExpense = LaporanKas::where('jenis', 'keluar')
             ->whereMonth('tanggal', Carbon::now()->month)
             ->whereYear('tanggal', Carbon::now()->year)
             ->sum('jumlah');

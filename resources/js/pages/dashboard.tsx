@@ -435,11 +435,49 @@ function ZakatCalculatorCard() {
     );
 }
 
-export default function Dashboard({ stats, recentTransactions, upcomingAppointments }: DashboardProps) {
+export default function Dashboard({ stats: initialStats, recentTransactions: initialTransactions, upcomingAppointments }: DashboardProps) {
     const [sholatTimes, setSholatTimes] = useState<SholatTime | null>(null);
     const [nextSholat, setNextSholat] = useState<{ name: string; time: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [stats, setStats] = useState<DashboardStats>(initialStats);
+    const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(initialTransactions);
+
+    // Function to fetch real-time statistics
+    const fetchRealTimeStats = async () => {
+        try {
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/api/statistics/summary?_t=${timestamp}`);
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) {
+                    setStats({
+                        totalKas: parseFloat(result.data.totalKas) || 0,
+                        totalDonasi: parseFloat(result.data.totalDonasi) || 0,
+                        totalJanjiTemu: parseInt(result.data.totalJanjiTemu) || 0,
+                        janjiTemuPending: parseInt(result.data.janjiTemuPending) || 0,
+                        monthlyIncome: parseFloat(result.data.monthlyIncome) || 0,
+                        monthlyExpense: parseFloat(result.data.monthlyExpense) || 0
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching real-time stats:', error);
+        }
+    };
+
+    useEffect(() => {
+        // Fetch real-time data on mount
+        fetchRealTimeStats();
+        
+        // Set up interval to refresh data every 30 seconds
+        const statsInterval = setInterval(fetchRealTimeStats, 30000);
+
+        // Cleanup interval on unmount
+        return () => {
+            clearInterval(statsInterval);
+        };
+    }, []);
 
     useEffect(() => {
         const fetchSholatTimes = async () => {
@@ -618,7 +656,7 @@ export default function Dashboard({ stats, recentTransactions, upcomingAppointme
                                     <div className="text-2xl lg:text-3xl xl:text-4xl font-bold mb-2">
                                         {stats.totalJanjiTemu}
                                     </div>
-                                    <div className="text-emerald-100 font-medium text-sm lg:text-base">Total Konsultasi</div>
+                                    <div className="text-emerald-100 font-medium text-sm lg:text-base">Total Janji Temu</div>
                                 </div>
                             </div>
                             
@@ -767,8 +805,8 @@ export default function Dashboard({ stats, recentTransactions, upcomingAppointme
                     <Card className="hover:shadow-lg transition-shadow duration-300 bg-white border border-gray-200">
                         <CardContent className="p-6">
                             <div className="mb-6">
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">Konsultasi Mendatang</h3>
-                                <p className="text-sm text-gray-600">Jadwal konsultasi dengan ustadz</p>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">Janji Temu Mendatang</h3>
+                                <p className="text-sm text-gray-600">Jadwal janji temu dengan ustadz</p>
                             </div>
                             
                             <div className="space-y-4">
