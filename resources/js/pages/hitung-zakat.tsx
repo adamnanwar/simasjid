@@ -288,17 +288,17 @@ export default function HitungZakat() {
 
     const getNisabInfo = (zakatType: string) => {
         const nisabInfo: Record<string, string> = {
-            'Zakat Maal': 'Rp 7.425.000 (setara 85 gram emas)',
-            'Zakat Profesi': 'Rp 7.425.000 per tahun (setara 653 kg beras)',
-            'Zakat Emas, Perak, dan Logam mulia': '85 gram emas atau 595 gram perak',
-            'Zakat Pendapatan Dan Jasa': 'Rp 7.425.000 per tahun',
-            'Zakat Perniagaan': 'Rp 7.425.000 (modal + keuntungan - utang)',
-            'Zakat Pertambangan': 'Tidak ada nisab minimum',
-            'Zakat Pertanian, Perkebunan, dan Kehutanan': '5 wasaq (± 653 kg gabah/beras)',
-            'Zakat Perusahaan': 'Rp 7.425.000 (aset bersih)',
-            'Zakat Peternakan dan Perikanan': 'Kambing: 40 ekor, Sapi: 30 ekor, Unta: 5 ekor',
-            'Zakat Rikaz': 'Tidak ada nisab minimum (1/5 dari temuan)',
-            'Zakat uang dan surat berharga lainnya': 'Rp 7.425.000 (setara 85 gram emas)'
+            'Zakat Maal': '85 gram emas (±Rp 8.500.000 - 12.000.000)*',
+            'Zakat Profesi': '85 gram emas (±Rp 8.500.000 - 12.000.000)*',
+            'Zakat Emas, Perak, dan Logam mulia': 'Emas: 85 gram, Perak: 595 gram (±Rp 8.500.000 - 12.000.000)*',
+            'Zakat Pendapatan Dan Jasa': '85 gram emas per tahun (±Rp 8.500.000 - 12.000.000)*',
+            'Zakat Perniagaan': '85 gram emas (modal + keuntungan - utang) (±Rp 8.500.000 - 12.000.000)*',
+            'Zakat Pertambangan': 'Tidak ada nisab minimum - 10% jika memerlukan biaya besar, 20% jika mudah diperoleh',
+            'Zakat Pertanian, Perkebunan, dan Kehutanan': '5 wasaq (653 kg gabah kering atau setara 520 kg beras)',
+            'Zakat Perusahaan': '85 gram emas dari aset bersih (±Rp 8.500.000 - 12.000.000)*',
+            'Zakat Peternakan': 'Kambing/Domba: 40 ekor, Sapi/Kerbau: 30 ekor, Unta: 5 ekor',
+            'Zakat Rikaz': 'Tidak ada nisab minimum - 20% (1/5) dari total harta karun/temuan',
+            'Zakat uang dan surat berharga lainnya': '85 gram emas (±Rp 8.500.000 - 12.000.000)*'
         };
         return nisabInfo[zakatType] || 'Konsultasikan dengan ahli fiqih untuk nisab yang tepat';
     };
@@ -424,7 +424,8 @@ export default function HitungZakat() {
                                                 </p>
                                                 <p className="text-sm text-gray-600 mt-2">
                                                     Rate: {selectedZakat === 'Zakat Rikaz' ? '20%' : 
-                                                           selectedZakat === 'Zakat Pertanian, Perkebunan, dan Kehutanan' ? '5-10%' : '2.5%'}
+                                                           selectedZakat === 'Zakat Pertanian, Perkebunan, dan Kehutanan' ? '5-10%' : 
+                                                           selectedZakat === 'Zakat Pertambangan' ? '10-20%' : '2.5%'}
                                                 </p>
                                             </div>
                                             
@@ -453,21 +454,27 @@ export default function HitungZakat() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-4">
-                                            <div className="p-4 bg-blue-50 rounded-lg">
-                                                <h4 className="font-semibold text-blue-900 mb-2">Rate Zakat</h4>
-                                                <p className="text-blue-800 text-sm">
-                                                    {selectedZakat === 'Zakat Rikaz' ? '20% dari harta temuan' : 
-                                                     selectedZakat === 'Zakat Pertanian, Perkebunan, dan Kehutanan' ? '5% (irigasi) atau 10% (tadah hujan)' : 
-                                                     '2.5% dari total harta'}
-                                                </p>
-                                            </div>
+                                                                        <div className="p-4 bg-blue-50 rounded-lg">
+                                <h4 className="font-semibold text-blue-900 mb-2">Rate Zakat</h4>
+                                <p className="text-blue-800 text-sm">
+                                    {selectedZakat === 'Zakat Rikaz' ? '20% dari harta temuan' : 
+                                     selectedZakat === 'Zakat Pertanian, Perkebunan, dan Kehutanan' ? '5% (dengan irigasi/biaya) atau 10% (tadah hujan)' : 
+                                     selectedZakat === 'Zakat Pertambangan' ? '10% (biaya besar) atau 20% (mudah diperoleh)' :
+                                     '2.5% dari total harta'}
+                                </p>
+                            </div>
                                             
-                                            <div className="p-4 bg-orange-50 rounded-lg">
-                                                <h4 className="font-semibold text-orange-900 mb-2">Nisab</h4>
-                                                <p className="text-orange-800 text-sm">
-                                                    {getNisabInfo(selectedZakat)}
-                                                </p>
-                                            </div>
+                                                                        <div className="p-4 bg-orange-50 rounded-lg">
+                                <h4 className="font-semibold text-orange-900 mb-2">Nisab</h4>
+                                <p className="text-orange-800 text-sm">
+                                    {getNisabInfo(selectedZakat)}
+                                </p>
+                                {getNisabInfo(selectedZakat).includes('*') && (
+                                    <p className="text-orange-700 text-xs mt-2 italic">
+                                        * Nilai dalam rupiah dapat berubah sesuai harga emas saat ini
+                                    </p>
+                                )}
+                            </div>
                                             
                                             <div className="p-4 bg-green-50 rounded-lg">
                                                 <h4 className="font-semibold text-green-900 mb-2">Ketentuan Syariat</h4>

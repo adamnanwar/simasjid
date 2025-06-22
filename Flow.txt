@@ -1,0 +1,925 @@
+@startuml SIMASJID_Overall_System_Flow
+title SIMASJID - Sistem Informasi Masjid Terpadu (Overall Flow)
+
+start
+
+:User mengakses SIMASJID;
+
+if (User sudah login?) then (yes)
+  if (User adalah Admin?) then (yes)
+    :Redirect ke Admin Dashboard;
+    :Akses fitur Admin:
+    - Kelola Kas Masjid
+    - Kelola Donasi/Infaq
+    - Kelola Janji Temu
+    - Kelola Berita & Kegiatan
+    - Kelola Pengurus Masjid
+    - Kelola Jadwal Ustadz;
+  else (no)
+    :Akses sebagai User biasa;
+    :Akses fitur Public:
+    - Lihat Dashboard
+    - Lihat Laporan Kas
+    - Lihat Laporan Infaq
+    - Buat Janji Temu
+    - Lihat Berita & Kegiatan
+    - Lihat Pengurus Masjid
+    - Hitung Zakat
+    - Lihat Jam Sholat;
+  endif
+else (no)
+  :Akses sebagai Guest;
+  :Akses fitur Public:
+  - Lihat Dashboard
+  - Lihat Laporan Kas
+  - Lihat Laporan Infaq
+  - Buat Janji Temu
+  - Lihat Berita & Kegiatan
+  - Lihat Pengurus Masjid
+  - Hitung Zakat
+  - Lihat Jam Sholat;
+  
+  if (Ingin akses fitur Admin?) then (yes)
+    :Redirect ke Login Page;
+    :Input Username & Password;
+    if (Kredensial valid?) then (yes)
+      if (User adalah Admin?) then (yes)
+        :Login berhasil;
+        :Redirect ke Admin Dashboard;
+      else (no)
+        :Login berhasil sebagai User;
+        :Redirect ke User Dashboard;
+      endif
+    else (no)
+      :Login gagal;
+      :Tampilkan error message;
+      :Kembali ke Login Page;
+    endif
+  else (no)
+    :Tetap sebagai Guest;
+  endif
+endif
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Admin_Dashboard_Flow
+title SIMASJID - Admin Dashboard Flow
+
+start
+
+:Admin login ke sistem;
+:Tampilkan Admin Dashboard;
+
+:Load real-time statistics:
+- Total Kas & Donasi
+- Total Janji Temu
+- Statistik Bulanan
+- Recent Transactions;
+
+partition "Admin Menu Options" {
+  :Admin memilih menu;
+  
+  if (Menu yang dipilih?) then (Kelola Kas Masjid)
+    :Redirect ke Admin Kas Page;
+    :Tampilkan daftar transaksi kas;
+    :Admin dapat:
+    - Tambah transaksi baru
+    - Edit transaksi existing
+    - Hapus transaksi
+    - Filter & search data;
+    
+  elseif (Kelola Donasi) then
+    :Redirect ke Admin Donasi Page;
+    :Tampilkan daftar donasi/infaq;
+    :Admin dapat:
+    - Lihat semua donasi
+    - Update status donasi
+    - Export laporan
+    - Filter berdasarkan kategori;
+    
+  elseif (Kelola Janji Temu) then
+    :Redirect ke Admin Janji Temu Page;
+    :Tampilkan daftar janji temu;
+    :Admin dapat:
+    - Lihat semua janji temu
+    - Update status (approve/reject)
+    - Kelola jadwal ustadz
+    - Tambah/edit/hapus ustadz;
+    
+  elseif (Kelola Berita) then
+    :Redirect ke Admin Berita Page;
+    :Tampilkan daftar berita & kegiatan;
+    :Admin dapat:
+    - Tambah berita/kegiatan baru
+    - Edit berita existing
+    - Hapus berita
+    - Upload gambar;
+    
+  elseif (Kelola Pengurus) then
+    :Redirect ke Admin Pengurus Page;
+    :Tampilkan daftar pengurus masjid;
+    :Admin dapat:
+    - Tambah pengurus baru
+    - Edit data pengurus
+    - Hapus pengurus
+    - Update jabatan;
+    
+  else (Settings/Profile)
+    :Redirect ke Settings Page;
+    :Admin dapat:
+    - Update profile
+    - Change password
+    - Appearance settings;
+  endif
+}
+
+:Data tersimpan ke database;
+:Update real-time statistics;
+:Tampilkan notifikasi sukses;
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Guest_Public_Flow
+title SIMASJID - Guest/Public User Flow
+
+start
+
+:Guest mengakses SIMASJID;
+:Tampilkan Home Dashboard;
+
+:Load public statistics:
+- Total Kas & Donasi
+- Total Janji Temu
+- Jam Sholat
+- Berita Terbaru;
+
+partition "Public Menu Options" {
+  :Guest memilih menu;
+  
+  if (Menu yang dipilih?) then (Dashboard)
+    :Tampilkan Dashboard utama;
+    :Show:
+    - Hero section dengan stats
+    - Cash flow masjid
+    - Kalkulator zakat
+    - Recent transactions
+    - Janji temu mendatang
+    - Berita terbaru;
+    
+  elseif (Laporan Kas) then
+    :Tampilkan Laporan Kas Page;
+    :Show transparansi keuangan:
+    - Daftar pemasukan
+    - Daftar pengeluaran
+    - Summary saldo
+    - Filter berdasarkan periode;
+    
+  elseif (Laporan Infaq) then
+    :Tampilkan Laporan Infaq Page;
+    :Show laporan donasi:
+    - Daftar donasi masuk
+    - Kategori (Infaq/Sedekah/Zakat)
+    - Total per kategori
+    - Filter berdasarkan periode;
+    
+  elseif (Janji Temu) then
+    :Tampilkan Form Janji Temu;
+    :Multi-step process:
+    1. Input data personal
+    2. Pilih ustadz
+    3. Pilih tanggal & waktu
+    4. Input keperluan;
+    :Submit janji temu;
+    :Kirim notifikasi ke admin;
+    
+  elseif (Berita & Kegiatan) then
+    :Tampilkan Berita Page;
+    :Show:
+    - Daftar berita terbaru
+    - Kategori berita/kegiatan
+    - Search & filter
+    - Detail berita (klik item);
+    
+  elseif (Pengurus Masjid) then
+    :Tampilkan Pengurus Page;
+    :Show:
+    - Struktur organisasi
+    - Data pengurus & jabatan
+    - Kontak pengurus
+    - Deskripsi tugas;
+    
+  elseif (Hitung Zakat) then
+    :Tampilkan Kalkulator Zakat;
+    :Fitur kalkulator:
+    - Zakat Maal
+    - Zakat Profesi
+    - Zakat Emas
+    - Hasil perhitungan otomatis;
+    
+  else (Jam Sholat)
+    :Tampilkan Jadwal Sholat;
+    :Show:
+    - Waktu sholat hari ini
+    - Countdown ke sholat berikutnya
+    - Lokasi (Batam)
+    - Kalender bulanan;
+  endif
+}
+
+if (Guest ingin login?) then (yes)
+  :Redirect ke Login Page;
+  :Input credentials;
+  if (Login berhasil?) then (yes)
+    if (User adalah Admin?) then (yes)
+      :Redirect ke Admin Dashboard;
+    else (no)
+      :Tetap di Public area sebagai User;
+    endif
+  else (no)
+    :Tampilkan error;
+    :Kembali ke Login Page;
+  endif
+else (no)
+  :Tetap sebagai Guest;
+endif
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Admin_Kas_Management_Flow
+title SIMASJID - Admin Kas Management Flow
+
+start
+
+:Admin akses Kelola Kas Masjid;
+:Load data laporan kas dari database;
+:Tampilkan daftar transaksi;
+
+partition "Kas Management Actions" {
+  if (Action yang dipilih?) then (Tambah Transaksi)
+    :Tampilkan form tambah transaksi;
+    :Input data:
+    - Jenis (Masuk/Keluar)
+    - Tanggal
+    - Kategori
+    - Jumlah
+    - Keterangan;
+    :Validasi form;
+    if (Data valid?) then (yes)
+      :Simpan ke database;
+      :Update saldo kas;
+      :Refresh daftar transaksi;
+      :Tampilkan notifikasi sukses;
+    else (no)
+      :Tampilkan error validation;
+    endif
+    
+  elseif (Edit Transaksi) then
+    :Pilih transaksi yang akan diedit;
+    :Load data transaksi ke form;
+    :Update data;
+    :Validasi perubahan;
+    if (Data valid?) then (yes)
+      :Update database;
+      :Recalculate saldo;
+      :Refresh daftar;
+      :Tampilkan notifikasi sukses;
+    else (no)
+      :Tampilkan error validation;
+    endif
+    
+  elseif (Hapus Transaksi) then
+    :Pilih transaksi yang akan dihapus;
+    :Tampilkan konfirmasi delete;
+    if (Konfirmasi hapus?) then (yes)
+      :Hapus dari database;
+      :Update saldo kas;
+      :Refresh daftar transaksi;
+      :Tampilkan notifikasi sukses;
+    else (no)
+      :Batal hapus;
+    endif
+    
+  elseif (Filter/Search) then
+    :Input kriteria filter:
+    - Periode tanggal
+    - Jenis transaksi
+    - Kategori
+    - Keyword;
+    :Apply filter ke query;
+    :Tampilkan hasil filter;
+    
+  else (Export Laporan)
+    :Pilih format export;
+    :Generate laporan;
+    :Download file;
+  endif
+}
+
+:Update real-time statistics;
+:Sync data dengan public dashboard;
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Admin_Janji_Temu_Flow
+title SIMASJID - Admin Janji Temu Management Flow
+
+start
+
+:Admin akses Kelola Janji Temu;
+:Load data janji temu & ustadz;
+:Tampilkan dashboard janji temu;
+
+partition "Janji Temu Management" {
+  if (Tab yang dipilih?) then (Daftar Janji Temu)
+    :Tampilkan daftar janji temu;
+    :Show filter status:
+    - Semua
+    - Pending
+    - Approved
+    - Rejected;
+    
+    if (Action janji temu?) then (Update Status)
+      :Pilih janji temu;
+      :Update status (Approve/Reject);
+      :Simpan perubahan;
+      :Kirim notifikasi ke user;
+      
+    elseif (Edit Janji Temu) then
+      :Load data janji temu;
+      :Edit informasi;
+      :Validasi & simpan;
+      
+    else (Hapus Janji Temu)
+      :Konfirmasi delete;
+      :Hapus dari database;
+    endif
+    
+  else (Kelola Jadwal Ustadz)
+    :Tampilkan daftar ustadz;
+    
+    if (Action ustadz?) then (Tambah Ustadz)
+      :Tampilkan form tambah ustadz;
+      :Input data:
+      - Nama ustadz
+      - Spesialisasi
+      - Pengalaman
+      - Hari kerja (multi-select)
+      - Jam kerja (start-end time)
+      - Kontak (phone, email)
+      - Bio/deskripsi;
+      :Validasi form;
+      if (Data valid?) then (yes)
+        :Simpan ke database;
+        :Generate readable schedule;
+        :Refresh daftar ustadz;
+        :Tampilkan notifikasi sukses;
+      else (no)
+        :Tampilkan error validation;
+      endif
+      
+    elseif (Edit Ustadz) then
+      :Load data ustadz ke form;
+      :Update informasi;
+      :Validasi perubahan;
+      if (Data valid?) then (yes)
+        :Update database;
+        :Update schedule string;
+        :Refresh daftar;
+        :Tampilkan notifikasi sukses;
+      else (no)
+        :Tampilkan error validation;
+      endif
+      
+    else (Hapus Ustadz)
+      :Konfirmasi delete;
+      if (Ada janji temu aktif?) then (yes)
+        :Tampilkan warning;
+        :Tidak bisa hapus;
+      else (no)
+        :Hapus dari database;
+        :Refresh daftar;
+        :Tampilkan notifikasi sukses;
+      endif
+    endif
+  endif
+}
+
+:Update statistics janji temu;
+:Sync dengan public dashboard;
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Guest_Janji_Temu_Flow
+title SIMASJID - Guest Janji Temu Booking Flow
+
+start
+
+:Guest akses halaman Janji Temu;
+:Load daftar ustadz aktif;
+:Tampilkan form multi-step;
+
+partition "Step 1: Data Personal" {
+  :Input informasi personal:
+  - Nama lengkap
+  - Email
+  - Nomor telepon;
+  :Validasi input;
+  if (Data valid?) then (yes)
+    :Lanjut ke Step 2;
+  else (no)
+    :Tampilkan error;
+    :Tetap di Step 1;
+  endif
+}
+
+partition "Step 2: Pilih Ustadz" {
+  :Tampilkan daftar ustadz;
+  :Show untuk setiap ustadz:
+  - Nama & foto
+  - Spesialisasi
+  - Pengalaman
+  - Jadwal ketersediaan
+  - Rating/review;
+  :User pilih ustadz;
+  if (Ustadz dipilih?) then (yes)
+    :Load jadwal ustadz;
+    :Lanjut ke Step 3;
+  else (no)
+    :Tetap di Step 2;
+  endif
+}
+
+partition "Step 3: Pilih Waktu" {
+  :Tampilkan kalender;
+  :Filter tanggal berdasarkan:
+  - Hari kerja ustadz
+  - Tanggal >= hari ini;
+  :User pilih tanggal;
+  
+  if (Tanggal dipilih?) then (yes)
+    :Generate time slots;
+    :Check ketersediaan:
+    - Slot 30 menit
+    - Hindari konflik
+    - Dalam jam kerja ustadz;
+    :Tampilkan available slots;
+    :User pilih waktu;
+    
+    if (Waktu dipilih?) then (yes)
+      :Lanjut ke Step 4;
+    else (no)
+      :Tetap di Step 3;
+    endif
+  else (no)
+    :Tetap di Step 3;
+  endif
+}
+
+partition "Step 4: Keperluan" {
+  :Input keperluan konsultasi;
+  :Validasi input;
+  if (Keperluan diisi?) then (yes)
+    :Review semua data;
+    :Tampilkan summary booking;
+  else (no)
+    :Tetap di Step 4;
+  endif
+}
+
+partition "Submit Booking" {
+  :User konfirmasi booking;
+  if (Konfirmasi submit?) then (yes)
+    :Validasi final;
+    :Check conflict lagi;
+    if (No conflict?) then (yes)
+      :Simpan janji temu;
+      :Set status = 'pending';
+      :Kirim notifikasi ke admin;
+      :Kirim konfirmasi ke user;
+      :Tampilkan success message;
+    else (no)
+      :Tampilkan error conflict;
+      :Kembali ke Step 3;
+    endif
+  else (no)
+    :Kembali ke review;
+  endif
+}
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Admin_Berita_Management_Flow
+title SIMASJID - Admin Berita & Kegiatan Management Flow
+
+start
+
+:Admin akses Kelola Berita;
+:Load daftar berita & kegiatan;
+:Tampilkan dashboard berita;
+
+partition "Berita Management Actions" {
+  if (Action yang dipilih?) then (Tambah Berita)
+    :Tampilkan form tambah berita;
+    :Input data:
+    - Judul
+    - Jenis (Berita/Kegiatan)
+    - Konten/Deskripsi
+    - Tanggal publikasi
+    - Penulis
+    - Upload gambar
+    - Status (Draft/Published);
+    :Validasi form;
+    if (Data valid?) then (yes)
+      :Upload gambar (jika ada);
+      :Simpan ke database;
+      :Generate slug URL;
+      :Refresh daftar berita;
+      :Tampilkan notifikasi sukses;
+    else (no)
+      :Tampilkan error validation;
+    endif
+    
+  elseif (Edit Berita) then
+    :Pilih berita yang akan diedit;
+    :Load data berita ke form;
+    :Update informasi;
+    :Validasi perubahan;
+    if (Data valid?) then (yes)
+      :Update gambar (jika ada);
+      :Update database;
+      :Update slug jika judul berubah;
+      :Refresh daftar;
+      :Tampilkan notifikasi sukses;
+    else (no)
+      :Tampilkan error validation;
+    endif
+    
+  elseif (Hapus Berita) then
+    :Pilih berita yang akan dihapus;
+    :Tampilkan konfirmasi delete;
+    if (Konfirmasi hapus?) then (yes)
+      :Hapus file gambar;
+      :Hapus dari database;
+      :Refresh daftar berita;
+      :Tampilkan notifikasi sukses;
+    else (no)
+      :Batal hapus;
+    endif
+    
+  elseif (Filter/Search) then
+    :Input kriteria filter:
+    - Jenis (Berita/Kegiatan)
+    - Status (Draft/Published)
+    - Periode tanggal
+    - Keyword;
+    :Apply filter ke query;
+    :Tampilkan hasil filter;
+    
+  else (Preview Berita)
+    :Tampilkan preview berita;
+    :Show layout seperti di public;
+  endif
+}
+
+:Update cache berita;
+:Sync dengan public pages;
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Data_Sync_Flow
+title SIMASJID - Real-time Data Synchronization Flow
+
+start
+
+:Sistem berjalan;
+
+partition "Database Operations" {
+  if (Ada perubahan data?) then (Kas/Transaksi)
+    :Update tabel laporan_kas;
+    :Recalculate saldo kas;
+    :Update monthly statistics;
+    
+  elseif (Donasi/Infaq) then
+    :Update tabel donations;
+    :Recalculate total donasi;
+    :Update monthly donations;
+    
+  elseif (Janji Temu) then
+    :Update tabel janji_temus;
+    :Update count janji temu;
+    :Update pending count;
+    
+  elseif (Berita/Kegiatan) then
+    :Update tabel berita_kegiatan;
+    :Clear cache berita;
+    :Update count berita;
+    
+  else (Pengurus/Ustadz)
+    :Update tabel terkait;
+    :Clear related cache;
+  endif
+}
+
+partition "Real-time Sync Process" {
+  :Trigger API statistics update;
+  :Calculate new totals:
+  - Total kas (pemasukan - pengeluaran)
+  - Total donasi (confirmed)
+  - Total janji temu
+  - Monthly income/expense;
+  
+  :Update API response cache;
+  :Add cache-busting headers;
+  
+  if (Frontend polling active?) then (yes)
+    :Frontend fetch /api/statistics/summary;
+    :Update dashboard statistics;
+    :Refresh UI components;
+  else (no)
+    :Data ready for next request;
+  endif
+}
+
+partition "Frontend Auto-refresh" {
+  :Every 30 seconds;
+  :Fetch latest statistics;
+  :Compare with current data;
+  if (Data changed?) then (yes)
+    :Update state;
+    :Re-render components;
+    :Show updated numbers;
+  else (no)
+    :No update needed;
+  endif
+}
+
+:Continue monitoring;
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Authentication_Flow
+title SIMASJID - Authentication & Authorization Flow
+
+start
+
+:User mengakses sistem;
+
+if (Mengakses halaman admin?) then (yes)
+  if (User sudah login?) then (yes)
+    if (User memiliki role admin?) then (yes)
+      :Akses granted;
+      :Redirect ke admin dashboard;
+    else (no)
+      :Access denied;
+      :Redirect ke public area;
+    endif
+  else (no)
+    :Redirect ke login page;
+  endif
+else (no)
+  :Akses public area;
+  :No authentication required;
+endif
+
+partition "Login Process" {
+  :Tampilkan login form;
+  :User input credentials;
+  :Validasi input;
+  
+  if (Input valid?) then (yes)
+    :Check credentials di database;
+    if (Credentials match?) then (yes)
+      :Create session;
+      :Set authentication cookies;
+      :Load user data & role;
+      
+      if (Login dari admin URL?) then (yes)
+        if (User adalah admin?) then (yes)
+          :Redirect ke admin dashboard;
+        else (no)
+          :Redirect ke public dashboard;
+          :Show message "Access denied";
+        endif
+      else (no)
+        :Redirect ke intended page;
+      endif
+      
+    else (no)
+      :Login failed;
+      :Show error message;
+      :Kembali ke login form;
+    endif
+  else (no)
+    :Show validation errors;
+    :Kembali ke login form;
+  endif
+}
+
+partition "Session Management" {
+  :Check session validity;
+  :Verify CSRF tokens;
+  :Handle session expiry;
+  
+  if (Session expired?) then (yes)
+    :Clear session data;
+    :Redirect ke login;
+  else (no)
+    :Continue with request;
+  endif
+}
+
+partition "Logout Process" {
+  :User click logout;
+  :Clear session data;
+  :Invalidate cookies;
+  :Regenerate CSRF token;
+  :Redirect ke public homepage;
+}
+
+stop
+@enduml
+
+================================================================================
+
+@startuml SIMASJID_Database_Schema_Flow
+title SIMASJID - Database Schema & Relationships
+
+entity "users" {
+  * id : bigint
+  --
+  name : string
+  email : string
+  password : string
+  role : enum(admin,user)
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "laporan_kas" {
+  * id : bigint
+  --
+  jenis : enum(masuk,keluar)
+  keterangan : string
+  jumlah : decimal
+  tanggal : date
+  kategori : string
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "donations" {
+  * id : bigint
+  --
+  nama_donatur : string
+  email : string
+  phone : string
+  tanggal : date
+  kategori : enum(Infaq,Sedekah,Zakat)
+  program : string
+  jumlah : decimal
+  metode : string
+  status : enum(pending,confirmed,rejected)
+  anonim : boolean
+  description : text
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "janji_temus" {
+  * id : bigint
+  --
+  nama : string
+  email : string
+  telepon : string
+  tanggal : date
+  waktu : time
+  keperluan : text
+  ustadz_id : bigint
+  status : enum(pending,approved,rejected)
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "ustadzs" {
+  * id : bigint
+  --
+  name : string
+  specialization : string
+  experience : string
+  schedule : string
+  schedule_days : json
+  schedule_start_time : time
+  schedule_end_time : time
+  phone : string
+  email : string
+  bio : text
+  active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "berita_kegiatan" {
+  * id : bigint
+  --
+  judul : string
+  konten : text
+  ringkasan : text
+  jenis : enum(berita,kegiatan)
+  kategori : string
+  status : enum(draft,published)
+  tanggal_publikasi : date
+  penulis : string
+  gambar_url : string
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "pengurus_masjid" {
+  * id : bigint
+  --
+  nama : string
+  jabatan : string
+  telepon : string
+  email : string
+  foto_url : string
+  deskripsi : text
+  urutan : integer
+  aktif : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+' Relationships
+janji_temus ||--o{ ustadzs : "ustadz_id"
+
+note right of laporan_kas
+  Menyimpan semua transaksi kas masjid
+  jenis: 'masuk' untuk pemasukan
+  jenis: 'keluar' untuk pengeluaran
+end note
+
+note right of donations
+  Menyimpan data donasi/infaq
+  status: 'confirmed' untuk yang valid
+  kategori: Infaq, Sedekah, Zakat
+end note
+
+note right of janji_temus
+  Menyimpan booking konsultasi
+  Terhubung dengan ustadz
+  Multi-step booking process
+end note
+
+note right of ustadzs
+  Data ustadz dan jadwal
+  schedule_days: JSON array hari kerja
+  schedule_*_time: jam kerja
+end note
+
+@enduml
+
+================================================================================
+END OF FLOWCHART DOCUMENTATION
+================================================================================
+
+CARA PENGGUNAAN:
+1. Copy salah satu diagram @startuml ... @enduml
+2. Paste ke PlantUML editor online (plantuml.com/plantuml)
+3. Atau gunakan PlantUML extension di VS Code
+4. Generate diagram untuk visualisasi flowchart
+
+DAFTAR FLOWCHART:
+- SIMASJID_Overall_System_Flow: Alur sistem keseluruhan
+- SIMASJID_Admin_Dashboard_Flow: Alur dashboard admin
+- SIMASJID_Guest_Public_Flow: Alur pengguna guest/public
+- SIMASJID_Admin_Kas_Management_Flow: Alur kelola kas admin
+- SIMASJID_Admin_Janji_Temu_Flow: Alur kelola janji temu admin
+- SIMASJID_Guest_Janji_Temu_Flow: Alur booking janji temu guest
+- SIMASJID_Admin_Berita_Management_Flow: Alur kelola berita admin
+- SIMASJID_Data_Sync_Flow: Alur sinkronisasi data real-time
+- SIMASJID_Authentication_Flow: Alur autentikasi & autorisasi
+- SIMASJID_Database_Schema_Flow: Skema database & relasi 
