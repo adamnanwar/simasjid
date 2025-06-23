@@ -52,7 +52,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         { name: 'Hitung Zakat', href: '/hitung-zakat', icon: Calculator },
         { name: 'Jam Sholat', href: '/jam-sholat', icon: Clock },
         { name: 'Janji Temu', href: '/janji-temu', icon: Calendar },
-        { name: 'Kegiatan Mendatang', href: '/kegiatan-mendatang', icon: CalendarCheck },
+        // { name: 'Kegiatan Mendatang', href: '/kegiatan-mendatang', icon: CalendarCheck },
         { name: 'Berita & Kegiatan', href: '/berita-kegiatan', icon: Newspaper },
         { name: 'Pengurus Masjid', href: '/pengurus-masjid', icon: UserCheck },
     ];

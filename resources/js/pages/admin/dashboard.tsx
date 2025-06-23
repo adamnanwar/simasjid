@@ -196,7 +196,7 @@ export default function AdminDashboard({ stats }: Props) {
             </div>
 
             {/* Recent Activities */}
-            <Card>
+            {/* <Card>
                 <CardHeader>
                     <CardTitle>Aktivitas Terbaru</CardTitle>
                 </CardHeader>
@@ -225,7 +225,7 @@ export default function AdminDashboard({ stats }: Props) {
                         </div>
                     </div>
                 </CardContent>
-            </Card>
+            </Card> */}
         </AdminLayout>
     );
 }
