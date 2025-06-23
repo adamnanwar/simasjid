@@ -26,7 +26,7 @@ class AdminMiddleware
             session(['url.intended' => $request->url()]);
             
             // Redirect to admin login
-            return redirect('/admin/login');
+            return redirect()->route('admin.login');
         }
 
         return $next($request);
