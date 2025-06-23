@@ -14,7 +14,6 @@ use App\Http\Controllers\UstadzController;
 use App\Http\Controllers\KegiatanMendatangController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -54,15 +53,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         return redirect('/admin/login');
     })->name('admin');
     
-    // Auth routes (login, register, etc.) - with admin prefix
+    // Auth routes (login only) - with admin prefix
     Route::middleware('guest')->group(function () {
         Route::get('login', [AuthenticatedSessionController::class, 'create'])
             ->name('login');
         Route::post('login', [AuthenticatedSessionController::class, 'store']);
-        
-        Route::get('register', [RegisteredUserController::class, 'create'])
-            ->name('register');
-        Route::post('register', [RegisteredUserController::class, 'store']);
         
         Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
             ->name('password.request');
