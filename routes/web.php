@@ -11,6 +11,8 @@ use App\Http\Controllers\PengurusMasjidController;
 use App\Http\Controllers\SholatController;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Controllers\UstadzController;
+use App\Http\Controllers\KegiatanMendatangController;
+use App\Http\Controllers\DonationController;
 
 // Public Routes - No Authentication Required
 Route::get('/', [DashboardController::class, 'index'])->name('home');
@@ -30,9 +32,12 @@ Route::post('janji-temu', [JanjiTemuController::class, 'store'])->name('janji-te
 Route::get('berita-kegiatan', [BeritaKegiatanController::class, 'index'])->name('berita-kegiatan');
 Route::get('berita-kegiatan/{beritaKegiatan}', [BeritaKegiatanController::class, 'show'])->name('berita-kegiatan.show');
 Route::get('pengurus-masjid', [PengurusMasjidController::class, 'index'])->name('pengurus-masjid');
+Route::get('kegiatan-mendatang', function () {
+    return Inertia::render('kegiatan-mendatang');
+})->name('kegiatan-mendatang');
 
 // Admin Routes
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->name('admin.')->group(function () {
     // Redirect /admin to dashboard if authenticated, login if not
     Route::get('/', function () {
         if (auth()->check()) {
@@ -41,33 +46,39 @@ Route::prefix('admin')->group(function () {
         return redirect('/admin/login');
     })->name('admin');
     
-    // Dashboard route - protected by admin middleware
-    Route::middleware(['admin', 'verified'])->group(function () {
-        Route::get('/dashboard', function () {
-            return Inertia::render('admin/dashboard');
-        })->name('admin.dashboard');
-        
-        Route::get('/pengurus-masjid', function () {
-            return Inertia::render('admin/pengurus-masjid');
-        })->name('admin.pengurus-masjid');
-        
-        Route::get('/janji-temu', function () {
-            return Inertia::render('admin/janji-temu');
-        })->name('admin.janji-temu');
-        
-        Route::get('/keuangan/donasi', function () {
-            return Inertia::render('admin/keuangan/donasi');
-        })->name('admin.keuangan.donasi');
-        
-        Route::get('/keuangan/kas', [LaporanKasController::class, 'adminIndex'])->name('admin.keuangan.kas');
-        
-        Route::get('/berita', function () {
-            return Inertia::render('admin/berita');
-        })->name('admin.berita');
-    });
-    
     // Auth routes (login, register, etc.)
     require __DIR__.'/auth.php';
+
+    // Dashboard route - protected by admin middleware
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'adminIndex'])->name('dashboard');
+        Route::resource('pengurus-masjid', PengurusMasjidController::class);
+        
+        Route::get('/berita', [BeritaKegiatanController::class, 'adminIndex'])->name('berita.index');
+        Route::post('/berita', [BeritaKegiatanController::class, 'store'])->name('berita.store');
+        Route::put('/berita/{beritaKegiatan}', [BeritaKegiatanController::class, 'update'])->name('berita.update');
+        Route::delete('/berita/{beritaKegiatan}', [BeritaKegiatanController::class, 'destroy'])->name('berita.destroy');
+        Route::post('/berita/{beritaKegiatan}/toggle-status', [BeritaKegiatanController::class, 'toggleStatus'])->name('berita.toggle-status');
+        
+        // Admin Keuangan routes
+        Route::prefix('keuangan')->name('keuangan.')->group(function () {
+            Route::get('/donasi', function () {
+                return Inertia::render('admin/keuangan/donasi');
+            })->name('donasi');
+            Route::get('/kas', [LaporanKasController::class, 'adminIndex'])->name('kas');
+        });
+        
+        // Admin Janji Temu routes
+        Route::get('/janji-temu', [JanjiTemuController::class, 'adminIndex'])->name('janji-temu.index');
+        Route::post('/janji-temu/{janjiTemu}/update-status', [JanjiTemuController::class, 'updateStatus'])->name('janji-temu.update-status');
+        Route::delete('/janji-temu/{janjiTemu}', [JanjiTemuController::class, 'destroy'])->name('janji-temu.destroy');
+        Route::post('/janji-temu/ustadz', [JanjiTemuController::class, 'storeUstadz'])->name('janji-temu.store-ustadz');
+        
+        // Admin Kegiatan Mendatang routes
+        Route::resource('kegiatan-mendatang', KegiatanMendatangController::class);
+        Route::post('/kegiatan-mendatang/{kegiatanMendatang}/toggle-featured', [KegiatanMendatangController::class, 'toggleFeatured'])->name('kegiatan-mendatang.toggle-featured');
+        Route::post('/kegiatan-mendatang/{kegiatanMendatang}/update-status', [KegiatanMendatangController::class, 'updateStatus'])->name('kegiatan-mendatang.update-status');
+    });
 });
 
 // API Routes for Frontend
@@ -108,6 +119,15 @@ Route::prefix('api')->group(function () {
     
     // Hero Banner API
     Route::get('hero-banners', [DashboardController::class, 'apiHeroBanners'])->name('api.hero-banners');
+
+    // Kegiatan Mendatang API
+    Route::get('kegiatan-mendatang', [KegiatanMendatangController::class, 'apiUpcoming'])->name('api.kegiatan-mendatang.index');
+    Route::get('kegiatan-mendatang/featured', [KegiatanMendatangController::class, 'apiFeatured'])->name('api.kegiatan-mendatang.featured');
+    Route::get('kegiatan-mendatang/{id}', [KegiatanMendatangController::class, 'show'])->name('api.kegiatan-mendatang.show');
+
+    // API Routes for export
+    Route::post('/export/laporan-kas', [LaporanKasController::class, 'exportPDF'])->name('api.export.laporan-kas');
+    Route::post('/export/laporan-infaq', [LaporanInfaqController::class, 'exportPDF'])->name('api.export.laporan-infaq');
 });
 
 // Admin Only Routes (Hidden)

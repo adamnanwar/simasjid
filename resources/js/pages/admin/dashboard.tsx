@@ -2,9 +2,21 @@ import React from 'react';
 import AdminLayout from '@/layouts/admin-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@inertiajs/react';
-import { Users, Calendar, DollarSign, FileText, TrendingUp, Banknote } from 'lucide-react';
+import { Users, Calendar, DollarSign, FileText, TrendingUp, Banknote, CalendarCheck } from 'lucide-react';
 
-export default function AdminDashboard() {
+interface DashboardStats {
+    totalPengurus: number;
+    totalJanjiTemu: number;
+    totalDonasi: number;
+    totalBerita: number;
+    totalKegiatanMendatang: number;
+}
+
+interface Props {
+    stats: DashboardStats;
+}
+
+export default function AdminDashboard({ stats }: Props) {
     return (
         <AdminLayout title="Dashboard Admin">
             {/* Welcome Card */}
@@ -102,16 +114,32 @@ export default function AdminDashboard() {
                         </CardContent>
                     </Card>
                 </Link>
+
+                <Link href="/admin/kegiatan-mendatang">
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardContent className="p-6">
+                            <div className="flex items-center">
+                                <div className="p-3 rounded-full bg-indigo-100">
+                                    <CalendarCheck className="w-6 h-6 text-indigo-600" />
+                                </div>
+                                <div className="ml-4">
+                                    <h3 className="text-sm font-medium text-gray-900">Kegiatan Mendatang</h3>
+                                    <p className="text-sm text-gray-500">Kelola kegiatan mendatang</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
                 <Card>
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Pengurus</p>
-                                <p className="text-2xl font-bold text-gray-900">4</p>
+                                <p className="text-2xl font-bold text-gray-900">{stats.totalPengurus}</p>
                             </div>
                             <Users className="w-8 h-8 text-emerald-600" />
                         </div>
@@ -123,7 +151,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Janji Temu Bulan Ini</p>
-                                <p className="text-2xl font-bold text-gray-900">12</p>
+                                <p className="text-2xl font-bold text-gray-900">{stats.totalJanjiTemu}</p>
                             </div>
                             <Calendar className="w-8 h-8 text-blue-600" />
                         </div>
@@ -135,7 +163,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Donasi</p>
-                                <p className="text-2xl font-bold text-gray-900">15.2M</p>
+                                <p className="text-2xl font-bold text-gray-900">{(stats.totalDonasi / 1000000).toFixed(1)}M</p>
                             </div>
                             <Banknote className="w-8 h-8 text-yellow-600" />
                         </div>
@@ -147,9 +175,21 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Berita Aktif</p>
-                                <p className="text-2xl font-bold text-gray-900">8</p>
+                                <p className="text-2xl font-bold text-gray-900">{stats.totalBerita}</p>
                             </div>
                             <FileText className="w-8 h-8 text-purple-600" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-600">Kegiatan Mendatang</p>
+                                <p className="text-2xl font-bold text-gray-900">{stats.totalKegiatanMendatang}</p>
+                            </div>
+                            <CalendarCheck className="w-8 h-8 text-indigo-600" />
                         </div>
                     </CardContent>
                 </Card>

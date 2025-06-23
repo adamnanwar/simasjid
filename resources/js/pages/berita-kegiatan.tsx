@@ -27,9 +27,27 @@ interface BeritaKegiatanProps {
 
 export default function BeritaKegiatan({ beritaKegiatan }: BeritaKegiatanProps) {
     const [selectedCategory, setSelectedCategory] = useState('semua');
+    const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
 
     // Use data from Inertia props instead of API call
     const beritaData = beritaKegiatan?.data || [];
+
+    // Fetch upcoming events
+    useEffect(() => {
+        fetchUpcomingEvents();
+    }, []);
+
+    const fetchUpcomingEvents = async () => {
+        try {
+            const response = await fetch('/api/kegiatan-mendatang/featured');
+            const result = await response.json();
+            if (result.success && result.data) {
+                setUpcomingEvents(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching upcoming events:', error);
+        }
+    };
 
     const categoryStats = [
         { name: 'Semua', count: beritaData.length, color: 'bg-blue-500' },
@@ -74,13 +92,6 @@ export default function BeritaKegiatan({ beritaKegiatan }: BeritaKegiatanProps) 
                                 <p className="mt-2 text-lg text-gray-600">
                                     Informasi terkini tentang kegiatan dan program masjid
                                 </p>
-                            </div>
-                            <div className="mt-4 flex gap-3 md:mt-0">
-                                <Button variant="outline" className="flex items-center gap-2">
-                                    <Filter className="h-4 w-4" />
-                                    Filter
-                                </Button>
-
                             </div>
                         </div>
                     </div>
@@ -182,21 +193,28 @@ export default function BeritaKegiatan({ beritaKegiatan }: BeritaKegiatanProps) 
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="border-l-4 border-green-500 pl-4">
-                                        <h4 className="font-semibold text-gray-900">Kajian Fiqih</h4>
-                                        <p className="text-sm text-gray-600">26 Maret 2024</p>
-                                        <p className="text-xs text-gray-500">Ba'da Maghrib</p>
-                                    </div>
-                                    <div className="border-l-4 border-blue-500 pl-4">
-                                        <h4 className="font-semibold text-gray-900">Santunan Yatim</h4>
-                                        <p className="text-sm text-gray-600">30 Maret 2024</p>
-                                        <p className="text-xs text-gray-500">08:00 - 12:00</p>
-                                    </div>
-                                    <div className="border-l-4 border-purple-500 pl-4">
-                                        <h4 className="font-semibold text-gray-900">Buka Puasa Bersama</h4>
-                                        <p className="text-sm text-gray-600">5 April 2024</p>
-                                        <p className="text-xs text-gray-500">17:00 - 20:00</p>
-                                    </div>
+                                    {upcomingEvents.length > 0 ? upcomingEvents.map((event, index) => {
+                                        const colors = ['border-green-500', 'border-blue-500', 'border-purple-500', 'border-orange-500', 'border-pink-500'];
+                                        const borderColor = colors[index % colors.length];
+                                        
+                                        return (
+                                            <div key={event.id} className={`border-l-4 ${borderColor} pl-4`}>
+                                                <h4 className="font-semibold text-gray-900">{event.title}</h4>
+                                                <p className="text-sm text-gray-600">{event.formatted_date}</p>
+                                                <p className="text-xs text-gray-500">{event.formatted_time}</p>
+                                                {event.is_featured && (
+                                                    <Badge className="bg-yellow-100 text-yellow-800 text-xs mt-1">
+                                                        Unggulan
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        );
+                                    }) : (
+                                        <div className="text-center py-4">
+                                            <Clock className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                                            <p className="text-gray-500 text-sm">Belum ada kegiatan mendatang</p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
 

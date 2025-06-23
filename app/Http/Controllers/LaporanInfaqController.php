@@ -296,4 +296,124 @@ class LaporanInfaqController extends Controller
 
         return back()->with('message', 'Donasi berhasil dihapus!');
     }
+
+    public function exportPDF(Request $request)
+    {
+        try {
+            $data = $request->all();
+            
+            // Create PDF content using DomPDF (simpler alternative to TCPDF)
+            $html = '<!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Laporan Infaq & Sedekah</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .summary { margin-bottom: 30px; }
+                        .summary table { width: 100%; border-collapse: collapse; }
+                        .summary th, .summary td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+                        .summary th { background-color: #f2f2f2; }
+                        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        .table th, .table td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+                        .table th { background-color: #f2f2f2; }
+                        .total { font-weight: bold; color: #059669; }
+                        .text-center { text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>LAPORAN INFAQ & SEDEKAH</h1>
+                        <h2>MASJID AL-IKHLASH</h2>
+                        <p>Kategori: ' . ucfirst($data['category'] ?? 'Semua') . '</p>
+                        <p>Tanggal Cetak: ' . date('d/m/Y H:i:s') . '</p>
+                    </div>
+                    
+                    <div class="summary">
+                        <h3>RINGKASAN DONASI</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Total Infaq</th>
+                                    <th>Total Sedekah</th>
+                                    <th>Total Donatur</th>
+                                    <th>Rata-rata Donasi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Rp ' . number_format($data['summary']['totalInfaq'] ?? 0, 0, ',', '.') . '</td>
+                                    <td>Rp ' . number_format($data['summary']['totalSedekah'] ?? 0, 0, ',', '.') . '</td>
+                                    <td>' . ($data['summary']['totalDonatur'] ?? 0) . '</td>
+                                    <td>Rp ' . number_format(($data['summary']['totalTransaksi'] ?? 0) > 0 ? ($data['summary']['totalDonasi'] ?? 0) / ($data['summary']['totalTransaksi'] ?? 1) : 0, 0, ',', '.') . '</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h3>DETAIL DONASI</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Nama Donatur</th>
+                                <th>Kategori</th>
+                                <th>Jumlah</th>
+                                <th>Metode</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+            
+            foreach ($data['donations'] ?? [] as $donation) {
+                $html .= '<tr>
+                    <td>' . date('d/m/Y', strtotime($donation['tanggal'] ?? '')) . '</td>
+                    <td>' . ($donation['nama_donatur'] ?? 'Anonim') . '</td>
+                    <td>' . ($donation['kategori'] ?? '') . '</td>
+                    <td>Rp ' . number_format($donation['jumlah'] ?? 0, 0, ',', '.') . '</td>
+                    <td>' . ($donation['metode'] ?? '') . '</td>
+                    <td>' . ucfirst($donation['status'] ?? '') . '</td>
+                </tr>';
+            }
+            
+            $html .= '</tbody></table>';
+            
+            // Top donors section if available
+            if (!empty($data['topDonors'])) {
+                $html .= '<h3 style="margin-top: 30px;">TOP DONATUR</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nama Donatur</th>
+                                <th>Total Donasi</th>
+                                <th>Jumlah Donasi</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+                
+                foreach ($data['topDonors'] ?? [] as $donor) {
+                    $html .= '<tr>
+                        <td>' . ($donor['nama_donatur'] ?? '') . '</td>
+                        <td>Rp ' . number_format($donor['total_donasi'] ?? 0, 0, ',', '.') . '</td>
+                        <td>' . ($donor['jumlah_donasi'] ?? 0) . ' kali</td>
+                    </tr>';
+                }
+                
+                $html .= '</tbody></table>';
+            }
+            
+            $html .= '</body></html>';
+            
+            // Use DomPDF for PDF generation
+            $pdf = \PDF::loadHTML($html);
+            $pdf->setPaper('A4', 'portrait');
+            
+            $filename = 'laporan-infaq-' . ($data['category'] ?? 'semua') . '-' . date('Y-m-d') . '.pdf';
+            
+            return $pdf->download($filename);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Gagal membuat PDF: ' . $e->getMessage()], 500);
+        }
+    }
 }

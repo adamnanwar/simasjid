@@ -245,6 +245,9 @@ export default function AdminBerita() {
             const berita = news.find(n => n.id === id);
             if (!berita) return;
 
+            // Toggle the status
+            const newStatus = berita.status === 'published' ? 'draft' : 'published';
+
             const formData = new FormData();
             formData.append('_method', 'PUT');
             formData.append('judul', berita.judul);
@@ -252,6 +255,9 @@ export default function AdminBerita() {
             formData.append('jenis', berita.kategori === 'Berita' ? 'berita' : 'kegiatan');
             formData.append('penulis', berita.penulis);
             formData.append('tanggal_publikasi', berita.tanggal_publikasi.split('T')[0]);
+            formData.append('status', newStatus); // Add the new status
+            formData.append('ringkasan', berita.ringkasan);
+            formData.append('kategori', berita.kategori);
 
             const response = await fetch(`/berita-kegiatan/${id}`, {
                 method: 'POST',
@@ -262,7 +268,8 @@ export default function AdminBerita() {
             });
 
             if (response.ok) {
-                showAlert('success', 'Berhasil!', 'Status berita berhasil diubah!');
+                const actionText = newStatus === 'published' ? 'dipublikasikan' : 'disembunyikan';
+                showAlert('success', 'Berhasil!', `Berita berhasil ${actionText}!`);
                 await fetchNews();
             } else {
                 const errorData = await response.json().catch(() => null);
@@ -369,13 +376,22 @@ export default function AdminBerita() {
                     ))}
                 </div>
                 
-                <Dialog open={showDialog} onOpenChange={setShowDialog}>
-                    <DialogTrigger asChild>
-                        <Button onClick={() => handleOpenDialog()} className="bg-emerald-600 hover:bg-emerald-700">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Tambah Berita
-                        </Button>
-                    </DialogTrigger>
+                <div className="flex gap-3">
+                    <Button 
+                        onClick={() => window.location.href = '/admin/kegiatan-mendatang'} 
+                        className="bg-purple-600 hover:bg-purple-700"
+                    >
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Kelola Kegiatan Mendatang
+                    </Button>
+                    
+                    <Dialog open={showDialog} onOpenChange={setShowDialog}>
+                        <DialogTrigger asChild>
+                            <Button onClick={() => handleOpenDialog()} className="bg-emerald-600 hover:bg-emerald-700">
+                                <Plus className="w-4 h-4 mr-2" />
+                                Tambah Berita
+                            </Button>
+                        </DialogTrigger>
                     
                     <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
@@ -508,6 +524,7 @@ export default function AdminBerita() {
                         </form>
                     </DialogContent>
                 </Dialog>
+                </div>
             </div>
 
             {/* News List */}

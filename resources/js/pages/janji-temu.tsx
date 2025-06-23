@@ -660,7 +660,7 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
                             </Card>
 
                             {/* Available Times Today Preview */}
-                            <Card className="shadow-lg">
+                            {/* <Card className="shadow-lg">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Clock className="h-5 w-5" />
@@ -687,7 +687,7 @@ export default function JanjiTemu({ janjiTemu: initialData, ustadz }: JanjiTemuP
                                         </div>
                                     )}
                                 </CardContent>
-                            </Card>
+                            </Card> */}
                         </div>
                     </div>
                 </div>

@@ -8,13 +8,13 @@ import {
     Heart,
     Users,
     TrendingUp,
-    Gift,
+    DollarSign,
     Calendar,
     Download,
-    Filter,
-    Plus,
-    Search
+    ArrowUpRight,
+    ArrowDownRight
 } from 'lucide-react';
+import { useAlert } from '@/hooks/use-alert';
 
 interface LaporanInfaqProps {
     donations: any[];
@@ -45,20 +45,15 @@ export default function LaporanInfaq({
     donationsByMethod: initialDonationsByMethod, 
     filters: initialFilters 
 }: LaporanInfaqProps) {
-    const [selectedCategory, setSelectedCategory] = useState('semua');
-    const [donations, setDonations] = useState(initialDonations || []);
-    const [summary, setSummary] = useState(initialSummary || {
-        totalInfaq: 0,
-        totalSedekah: 0,
-        totalZakat: 0,
-        totalDonasi: 0,
-        totalDonatur: 0,
-        totalTransaksi: 0
-    });
-    const [topDonors, setTopDonors] = useState(initialTopDonors || []);
-    const [donationsByProgram, setDonationsByProgram] = useState(initialDonationsByProgram || []);
-    const [donationsByMethod, setDonationsByMethod] = useState(initialDonationsByMethod || []);
+    const [donations, setDonations] = useState(initialDonations);
+    const [summary, setSummary] = useState(initialSummary);
+    const [topDonors, setTopDonors] = useState(initialTopDonors);
+    const [donationsByProgram, setDonationsByProgram] = useState(initialDonationsByProgram);
+    const [donationsByMethod, setDonationsByMethod] = useState(initialDonationsByMethod);
+    const [filters, setFilters] = useState(initialFilters);
     const [loading, setLoading] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState('semua');
+    const { alertState, showAlert, hideAlert } = useAlert();
 
     // Fetch fresh data from API
     useEffect(() => {
@@ -133,19 +128,62 @@ export default function LaporanInfaq({
         }).format(amount);
     };
 
+    const exportToPDF = async () => {
+        try {
+            const response = await fetch('/api/export/laporan-infaq', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({
+                    category: selectedCategory,
+                    donations: filteredDonations,
+                    summary: summary,
+                    topDonors: topDonors,
+                    donationsByProgram: donationsByProgram,
+                    donationsByMethod: donationsByMethod
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal mengunduh laporan');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `laporan-infaq-${selectedCategory}-${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showAlert('success', 'Berhasil!', 'Laporan infaq berhasil diunduh dalam format PDF');
+        } catch (error) {
+            showAlert('error', 'Gagal!', 'Terjadi kesalahan saat mengunduh laporan. Silakan coba lagi.');
+        }
+    };
+
+    // Hitung jumlah data berdasarkan kategori
+    const infaqCount = donations.filter((d: any) => d.kategori === 'Infaq').length;
+    const sedekahCount = donations.filter((d: any) => d.kategori === 'Sedekah').length;
+    const zakatCount = donations.filter((d: any) => d.kategori === 'Zakat').length;
+    
     const summaryData = [
         {
             title: 'Total Infaq',
             value: formatCurrency(summary.totalInfaq),
-            change: `${Math.round((summary.totalInfaq / (summary.totalInfaq + summary.totalSedekah + summary.totalZakat)) * 100)}%`,
+            change: `${infaqCount} donasi`,
             icon: Heart,
             color: 'text-green-600 bg-green-100'
         },
         {
             title: 'Total Sedekah',
             value: formatCurrency(summary.totalSedekah),
-            change: `${Math.round((summary.totalSedekah / (summary.totalInfaq + summary.totalSedekah + summary.totalZakat)) * 100)}%`,
-            icon: Gift,
+            change: `${sedekahCount} donasi`,
+            icon: DollarSign,
             color: 'text-purple-600 bg-purple-100'
         },
         {
@@ -157,7 +195,7 @@ export default function LaporanInfaq({
         },
         {
             title: 'Rata-rata Donasi',
-            value: formatCurrency(summary.totalDonatur > 0 ? summary.totalDonasi / summary.totalDonatur : 0),
+            value: formatCurrency(summary.totalTransaksi > 0 ? summary.totalDonasi / summary.totalTransaksi : 0),
             change: `${summary.totalTransaksi} transaksi`,
             icon: TrendingUp,
             color: 'text-orange-600 bg-orange-100'
@@ -171,22 +209,52 @@ export default function LaporanInfaq({
 
     if (loading) {
         return (
-            <MainLayout>
-                <Head title="Laporan Infaq & Sedekah - Sistem Informasi Masjid Al-Ikhlash" />
-                <div className="min-h-screen bg-gray-50 py-8">
-                    <div className="mx-auto max-w-7xl px-6 sm:px-12 lg:px-16">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-                            <p className="mt-4 text-gray-600">Memuat data donasi...</p>
+            <>
+                <MainLayout>
+                    <Head title="Laporan Infaq & Sedekah - Sistem Informasi Masjid Al-Ikhlash" />
+                    <div className="min-h-screen bg-gray-50 py-8">
+                        <div className="mx-auto max-w-7xl px-6 sm:px-12 lg:px-16">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+                                <p className="mt-4 text-gray-600">Memuat data donasi...</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </MainLayout>
+                </MainLayout>
+                
+                {/* Alert Component */}
+                {alertState.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                        <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                            <div className="flex items-center mb-4">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
+                                    alertState.type === 'success' ? 'bg-green-100 text-green-600' :
+                                    alertState.type === 'error' ? 'bg-red-100 text-red-600' :
+                                    alertState.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                                    'bg-blue-100 text-blue-600'
+                                }`}>
+                                    {alertState.type === 'success' ? '✓' :
+                                     alertState.type === 'error' ? '✕' :
+                                     alertState.type === 'warning' ? '⚠' : 'ℹ'}
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900">{alertState.title}</h3>
+                            </div>
+                            <p className="text-gray-600 mb-6">{alertState.message}</p>
+                            <div className="flex justify-end">
+                                <Button onClick={hideAlert} className="bg-blue-600 hover:bg-blue-700">
+                                    OK
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </>
         );
     }
 
     return (
-        <MainLayout>
+        <>
+            <MainLayout>
             <Head title="Laporan Infaq & Sedekah - Sistem Informasi Masjid Al-Ikhlash" />
             
             <div className="min-h-screen bg-gray-50 py-8">
@@ -204,32 +272,52 @@ export default function LaporanInfaq({
                                 </p>
                             </div>
                             <div className="mt-4 flex gap-3 md:mt-0">
-                                <Button variant="outline" className="flex items-center gap-2">
-                                    <Search className="h-4 w-4" />
-                                    Cari Donatur
-                                </Button>
-                                <Button variant="outline" className="flex items-center gap-2">
+                                <Button 
+                                    variant="outline" 
+                                    className="flex items-center gap-2"
+                                    onClick={exportToPDF}
+                                >
                                     <Download className="h-4 w-4" />
-                                    Export
+                                    Export PDF
                                 </Button>
-
                             </div>
                         </div>
                     </div>
 
                     {/* Summary Cards */}
                     <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                        {summaryData.map((item) => (
-                            <Card key={item.title} className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        {summaryData.map((item, index) => (
+                            <Card key={item.title} className="relative overflow-hidden bg-gradient-to-br from-white via-white to-gray-50 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                                <div className={`absolute top-0 left-0 w-full h-1 ${
+                                    index === 0 ? 'bg-gradient-to-r from-emerald-500 to-green-600' :
+                                    index === 1 ? 'bg-gradient-to-r from-purple-500 to-indigo-600' :
+                                    index === 2 ? 'bg-gradient-to-r from-blue-500 to-cyan-600' :
+                                    'bg-gradient-to-r from-orange-500 to-red-600'
+                                }`}></div>
                                 <CardContent className="p-6">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-600">{item.title}</p>
-                                            <p className="text-2xl font-bold text-gray-900">{item.value}</p>
-                                            <p className="text-sm text-emerald-600 font-medium">{item.change} bulan ini</p>
+                                    <div className="flex items-start justify-between space-x-4">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">{item.title}</p>
+                                            <p className="text-2xl font-bold text-gray-900 mb-1 break-words">{item.value}</p>
+                                            <p className={`text-sm font-medium ${
+                                                index === 0 ? 'text-emerald-600' :
+                                                index === 1 ? 'text-purple-600' :
+                                                index === 2 ? 'text-blue-600' :
+                                                'text-orange-600'
+                                            }`}>{item.change}</p>
                                         </div>
-                                        <div className={`rounded-full p-3 ${item.color}`}>
-                                            <item.icon className="h-6 w-6" />
+                                        <div className={`p-3 rounded-xl flex-shrink-0 ${
+                                            index === 0 ? 'bg-gradient-to-br from-emerald-100 to-green-100' :
+                                            index === 1 ? 'bg-gradient-to-br from-purple-100 to-indigo-100' :
+                                            index === 2 ? 'bg-gradient-to-br from-blue-100 to-cyan-100' :
+                                            'bg-gradient-to-br from-orange-100 to-red-100'
+                                        }`}>
+                                            <item.icon className={`h-6 w-6 ${
+                                                index === 0 ? 'text-emerald-600' :
+                                                index === 1 ? 'text-purple-600' :
+                                                index === 2 ? 'text-blue-600' :
+                                                'text-orange-600'
+                                            }`} />
                                         </div>
                                     </div>
                                 </CardContent>
@@ -436,20 +524,20 @@ export default function LaporanInfaq({
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Donasi Hari Ini</span>
-                                        <span className="font-bold text-green-600">Rp 2.4M</span>
+                                        <span className="text-sm text-gray-600">Total Donasi</span>
+                                        <span className="font-bold text-green-600">{formatCurrency(summary.totalDonasi)}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Donasi Minggu Ini</span>
-                                        <span className="font-bold text-green-600">Rp 12.8M</span>
+                                        <span className="text-sm text-gray-600">Total Infaq</span>
+                                        <span className="font-bold text-green-600">{formatCurrency(summary.totalInfaq)}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Rata-rata Harian</span>
-                                        <span className="font-bold text-blue-600">Rp 1.8M</span>
+                                        <span className="text-sm text-gray-600">Total Sedekah</span>
+                                        <span className="font-bold text-purple-600">{formatCurrency(summary.totalSedekah)}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600">Target Bulanan</span>
-                                        <span className="font-bold text-purple-600">Rp 50M</span>
+                                        <span className="text-sm text-gray-600">Rata-rata per Donasi</span>
+                                        <span className="font-bold text-blue-600">{formatCurrency(summary.totalTransaksi > 0 ? summary.totalDonasi / summary.totalTransaksi : 0)}</span>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -458,5 +546,33 @@ export default function LaporanInfaq({
                 </div>
             </div>
         </MainLayout>
+        
+        {/* Alert Component */}
+        {alertState.isOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                    <div className="flex items-center mb-4">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 ${
+                            alertState.type === 'success' ? 'bg-green-100 text-green-600' :
+                            alertState.type === 'error' ? 'bg-red-100 text-red-600' :
+                            alertState.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                            'bg-blue-100 text-blue-600'
+                        }`}>
+                            {alertState.type === 'success' ? '✓' :
+                             alertState.type === 'error' ? '✕' :
+                             alertState.type === 'warning' ? '⚠' : 'ℹ'}
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">{alertState.title}</h3>
+                    </div>
+                    <p className="text-gray-600 mb-6">{alertState.message}</p>
+                    <div className="flex justify-end">
+                        <Button onClick={hideAlert} className="bg-blue-600 hover:bg-blue-700">
+                            OK
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )}
+    </>
     );
 }

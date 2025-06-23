@@ -159,6 +159,85 @@ function LatestNewsSection() {
     );
 }
 
+// Upcoming Events Section Component
+function UpcomingEventsSection() {
+    const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchUpcomingEvents();
+    }, []);
+
+    const fetchUpcomingEvents = async () => {
+        try {
+            const response = await fetch('/api/kegiatan-mendatang/featured');
+            const result = await response.json();
+            if (result.success && result.data) {
+                setUpcomingEvents(result.data);
+            } else {
+                setUpcomingEvents([]);
+            }
+        } catch (error) {
+            console.error('Error fetching upcoming events:', error);
+            setUpcomingEvents([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                        <div className="w-4 h-16 bg-gray-200 rounded"></div>
+                        <div className="flex-1">
+                            <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                            <div className="bg-gray-200 h-3 rounded w-3/4"></div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    const getEventColor = (index: number) => {
+        const colors = ['border-l-green-500', 'border-l-blue-500', 'border-l-purple-500'];
+        return colors[index % colors.length];
+    };
+
+    return (
+        <div className="space-y-4">
+            {upcomingEvents.map((event, index) => (
+                <div key={event.id} className={`bg-white p-4 rounded-lg border-l-4 ${getEventColor(index)} shadow-sm hover:shadow-md transition-shadow`}>
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-1">{event.title}</h4>
+                            <p className="text-sm text-gray-600 mb-2">{event.formatted_date}</p>
+                            <div className="flex items-center text-xs text-gray-500">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {event.formatted_time}
+                            </div>
+                        </div>
+                        {event.is_featured && (
+                            <Badge className="bg-yellow-100 text-yellow-800 text-xs">
+                                Unggulan
+                            </Badge>
+                        )}
+                    </div>
+                </div>
+            ))}
+            
+            {upcomingEvents.length === 0 && (
+                <div className="text-center py-8">
+                    <div className="text-gray-400 mb-4">📅</div>
+                    <p className="text-gray-600">Belum ada kegiatan mendatang</p>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // Zakat Calculator Card Component
 function ZakatCalculatorCard() {
     const [activeZakat, setActiveZakat] = useState<string>('');
@@ -169,14 +248,15 @@ function ZakatCalculatorCard() {
         jumlah_harta: ''
     });
     
+    const [zakatFitrahData, setZakatFitrahData] = useState({
+        jumlah_jiwa: '',
+        pilihan_bayar: 'uang',
+        harga_beras: '15000'
+    });
+    
     const [zakatProfesiData, setZakatProfesiData] = useState({
         gaji_bulanan: '',
         bonus_tahunan: ''
-    });
-    
-    const [zakatEmasData, setZakatEmasData] = useState({
-        jumlah_emas: '',
-        harga_emas: ''
     });
 
     const hitungZakatMaal = () => {
@@ -185,20 +265,26 @@ function ZakatCalculatorCard() {
         setZakatResults({...zakatResults, maal: zakatAmount});
     };
 
+    const hitungZakatFitrah = () => {
+        const jumlahJiwa = parseFloat(zakatFitrahData.jumlah_jiwa) || 0;
+        const hargaBeras = parseFloat(zakatFitrahData.harga_beras) || 15000;
+        const pilihanBayar = zakatFitrahData.pilihan_bayar;
+        
+        let zakatAmount;
+        if (pilihanBayar === 'beras') {
+            zakatAmount = jumlahJiwa * 2.5; // Result in kg
+        } else {
+            zakatAmount = jumlahJiwa * 2.5 * hargaBeras; // Result in Rupiah
+        }
+        setZakatResults({...zakatResults, fitrah: zakatAmount});
+    };
+
     const hitungZakatProfesi = () => {
         const gaji = parseFloat(zakatProfesiData.gaji_bulanan) || 0;
         const bonus = parseFloat(zakatProfesiData.bonus_tahunan) || 0;
         const totalPenghasilan = gaji + (bonus / 12);
         const zakatAmount = totalPenghasilan * 0.025;
         setZakatResults({...zakatResults, profesi: zakatAmount});
-    };
-
-    const hitungZakatEmas = () => {
-        const jumlahEmas = parseFloat(zakatEmasData.jumlah_emas) || 0;
-        const hargaEmas = parseFloat(zakatEmasData.harga_emas) || 0;
-        const totalNilai = jumlahEmas * hargaEmas;
-        const zakatAmount = totalNilai * 0.025;
-        setZakatResults({...zakatResults, emas: zakatAmount});
     };
 
     const formatCurrency = (amount: number) => {
@@ -214,7 +300,7 @@ function ZakatCalculatorCard() {
         setZakatResults({});
         setZakatMaalData({ jumlah_harta: '' });
         setZakatProfesiData({ gaji_bulanan: '', bonus_tahunan: '' });
-        setZakatEmasData({ jumlah_emas: '', harga_emas: '' });
+        setZakatFitrahData({ jumlah_jiwa: '', pilihan_bayar: 'uang', harga_beras: '15000' });
     };
 
     return (
@@ -257,6 +343,32 @@ function ZakatCalculatorCard() {
                         </div>
                     </div>
 
+                    {/* Zakat Fitrah - Center Position */}
+                    <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${
+                        activeZakat === 'fitrah' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-purple-200 hover:border-purple-300'
+                    }`}>
+                        <div className="text-center">
+                            <div className="p-4 bg-orange-100 rounded-2xl mb-4">
+                                <span className="text-2xl">🌾</span>
+                            </div>
+                            <h4 className="text-lg font-bold text-gray-900 mb-2">Zakat Fitrah</h4>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Zakat wajib setiap muslim di bulan Ramadhan
+                            </p>
+                            <div className="text-sm text-orange-600 font-medium mb-4">
+                                Rate: 2.5 kg beras per jiwa
+                            </div>
+                            <Button 
+                                onClick={() => setActiveZakat(activeZakat === 'fitrah' ? '' : 'fitrah')}
+                                className="bg-orange-600 hover:bg-orange-700 text-white"
+                                size="sm"
+                            >
+                                <Calculator className="h-4 w-4 mr-2" />
+                                Hitung Zakat
+                            </Button>
+                        </div>
+                    </div>
+
                     {/* Zakat Profesi */}
                     <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${
                         activeZakat === 'profesi' ? 'border-green-500 ring-2 ring-green-200' : 'border-purple-200 hover:border-purple-300'
@@ -275,32 +387,6 @@ function ZakatCalculatorCard() {
                             <Button 
                                 onClick={() => setActiveZakat(activeZakat === 'profesi' ? '' : 'profesi')}
                                 className="bg-green-600 hover:bg-green-700 text-white"
-                                size="sm"
-                            >
-                                <Calculator className="h-4 w-4 mr-2" />
-                                Hitung Zakat
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Zakat Emas */}
-                    <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${
-                        activeZakat === 'emas' ? 'border-yellow-500 ring-2 ring-yellow-200' : 'border-purple-200 hover:border-purple-300'
-                    }`}>
-                        <div className="text-center">
-                            <div className="p-4 bg-yellow-100 rounded-2xl mb-4">
-                                <span className="text-2xl">💰</span>
-                            </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-2">Zakat Emas</h4>
-                            <p className="text-sm text-gray-600 mb-4">
-                                Zakat emas, perak, dan logam mulia
-                            </p>
-                            <div className="text-sm text-yellow-600 font-medium mb-4">
-                                Rate: 2.5%
-                            </div>
-                            <Button 
-                                onClick={() => setActiveZakat(activeZakat === 'emas' ? '' : 'emas')}
-                                className="bg-yellow-600 hover:bg-yellow-700 text-white"
                                 size="sm"
                             >
                                 <Calculator className="h-4 w-4 mr-2" />
@@ -339,6 +425,60 @@ function ZakatCalculatorCard() {
                             </div>
                         )}
 
+                        {activeZakat === 'fitrah' && (
+                            <div className="space-y-4">
+                                <h4 className="text-lg font-bold text-gray-900 mb-4">Hitung Zakat Fitrah</h4>
+                                <div>
+                                    <Label htmlFor="jumlah_jiwa">Jumlah Jiwa</Label>
+                                    <input
+                                        id="jumlah_jiwa"
+                                        type="number"
+                                        placeholder="Masukkan jumlah jiwa"
+                                        value={zakatFitrahData.jumlah_jiwa}
+                                        onChange={(e) => setZakatFitrahData({...zakatFitrahData, jumlah_jiwa: e.target.value})}
+                                        className="mt-1 flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="pilihan_bayar">Pilihan Bayar</Label>
+                                    <select
+                                        id="pilihan_bayar"
+                                        value={zakatFitrahData.pilihan_bayar}
+                                        onChange={(e) => setZakatFitrahData({...zakatFitrahData, pilihan_bayar: e.target.value})}
+                                        className="mt-1 flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        <option value="uang">Dalam Rupiah</option>
+                                        <option value="beras">Dalam Kilogram</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <Label htmlFor="harga_beras">Harga Beras per Kilogram (Rp)</Label>
+                                    <input
+                                        id="harga_beras"
+                                        type="number"
+                                        placeholder="Masukkan harga beras per kilogram"
+                                        value={zakatFitrahData.harga_beras}
+                                        onChange={(e) => setZakatFitrahData({...zakatFitrahData, harga_beras: e.target.value})}
+                                        className="mt-1 flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                </div>
+                                <Button onClick={hitungZakatFitrah} className="bg-orange-600 hover:bg-orange-700 text-white">
+                                    Hitung Zakat Fitrah
+                                </Button>
+                                {zakatResults.fitrah !== undefined && (
+                                    <div className="mt-4 p-4 bg-orange-50 rounded-lg">
+                                        <p className="text-sm text-gray-600">Zakat yang harus dibayar:</p>
+                                        <p className="text-2xl font-bold text-orange-600">
+                                            {zakatFitrahData.pilihan_bayar === 'beras' 
+                                                ? `${zakatResults.fitrah} kg beras` 
+                                                : formatCurrency(zakatResults.fitrah)
+                                            }
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeZakat === 'profesi' && (
                             <div className="space-y-4">
                                 <h4 className="text-lg font-bold text-gray-900 mb-4">Hitung Zakat Profesi</h4>
@@ -371,43 +511,6 @@ function ZakatCalculatorCard() {
                                     <div className="mt-4 p-4 bg-green-50 rounded-lg">
                                         <p className="text-sm text-gray-600">Zakat yang harus dibayar per bulan:</p>
                                         <p className="text-2xl font-bold text-green-600">{formatCurrency(zakatResults.profesi)}</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {activeZakat === 'emas' && (
-                            <div className="space-y-4">
-                                <h4 className="text-lg font-bold text-gray-900 mb-4">Hitung Zakat Emas</h4>
-                                <div>
-                                    <Label htmlFor="jumlah_emas">Jumlah Emas (gram)</Label>
-                                    <input
-                                        id="jumlah_emas"
-                                        type="number"
-                                        placeholder="Masukkan jumlah emas dalam gram"
-                                        value={zakatEmasData.jumlah_emas}
-                                        onChange={(e) => setZakatEmasData({...zakatEmasData, jumlah_emas: e.target.value})}
-                                        className="mt-1 flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="harga_emas">Harga Emas per Gram (Rp)</Label>
-                                    <input
-                                        id="harga_emas"
-                                        type="number"
-                                        placeholder="Masukkan harga emas per gram"
-                                        value={zakatEmasData.harga_emas}
-                                        onChange={(e) => setZakatEmasData({...zakatEmasData, harga_emas: e.target.value})}
-                                        className="mt-1 flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
-                                    />
-                                </div>
-                                <Button onClick={hitungZakatEmas} className="bg-yellow-600 hover:bg-yellow-700 text-white">
-                                    Hitung Zakat Emas
-                                </Button>
-                                {zakatResults.emas !== undefined && (
-                                    <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
-                                        <p className="text-sm text-gray-600">Zakat yang harus dibayar:</p>
-                                        <p className="text-2xl font-bold text-yellow-600">{formatCurrency(zakatResults.emas)}</p>
                                     </div>
                                 )}
                             </div>
@@ -848,6 +951,21 @@ export default function Dashboard({ stats: initialStats, recentTransactions: ini
                                     </div>
                                 )}
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Upcoming Events */}
+                    <Card className="hover:shadow-lg transition-shadow duration-300 bg-white border border-gray-200">
+                        <CardContent className="p-6">
+                            <div className="mb-6">
+                                <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                    <Clock className="h-5 w-5 text-purple-600" />
+                                    Kegiatan Mendatang
+                                </h3>
+                                <p className="text-sm text-gray-600">Jadwal kegiatan dan acara masjid</p>
+                            </div>
+                            
+                            <UpcomingEventsSection />
                         </CardContent>
                     </Card>
                 </div>

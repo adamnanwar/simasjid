@@ -18,6 +18,7 @@ export default function HitungZakat() {
 
     // Zakat options from reference
     const zakatOptions = {
+        'Zakat Fitrah': 'Zakat Fitrah',
         'Zakat Maal': 'Zakat Maal',
         'Zakat Profesi': 'Zakat Profesi',
         'Zakat Emas, Perak, dan Logam mulia': 'Zakat Emas, Perak, dan Logam mulia',
@@ -33,6 +34,33 @@ export default function HitungZakat() {
 
     // Field requirements for each zakat type
     const zakatFieldRequirements: Record<string, any[]> = {
+        'Zakat Fitrah': [
+            {
+                id: 'jumlah_jiwa',
+                label: 'Jumlah Jiwa dalam Keluarga',
+                placeholder: 'Masukkan jumlah anggota keluarga',
+                type: 'number',
+                required: true
+            },
+            {
+                id: 'pilihan_bayar',
+                label: 'Pilihan Pembayaran',
+                placeholder: 'Pilih jenis pembayaran',
+                type: 'select',
+                options: [
+                    { value: 'beras', label: 'Beras (2.5 kg per jiwa)' },
+                    { value: 'uang', label: 'Uang (setara harga 2.5 kg beras)' }
+                ],
+                required: true
+            },
+            {
+                id: 'harga_beras',
+                label: 'Harga Beras per KG (jika pilih uang)',
+                placeholder: 'Masukkan harga beras per kg',
+                type: 'number',
+                required: false
+            }
+        ],
         'Zakat Maal': [
             {
                 id: 'jumlah_harta',
@@ -219,6 +247,16 @@ export default function HitungZakat() {
         let calculatedAmount = 0;
 
         switch (zakatType) {
+            case 'Zakat Fitrah':
+                const jumlahJiwa = values.jumlah_jiwa || 0;
+                const hargaBeras = values.harga_beras || 15000; // Default harga beras Rp 15,000/kg
+                const pilihanBayar = formData.pilihan_bayar || 'uang';
+                if (pilihanBayar === 'beras') {
+                    calculatedAmount = jumlahJiwa * 2.5; // 2.5 kg per jiwa (result in kg)
+                } else {
+                    calculatedAmount = jumlahJiwa * 2.5 * hargaBeras; // Uang setara 2.5 kg beras per jiwa
+                }
+                break;
             case 'Zakat Maal':
                 calculatedAmount = values.jumlah_harta * 0.025;
                 break;
@@ -288,6 +326,7 @@ export default function HitungZakat() {
 
     const getNisabInfo = (zakatType: string) => {
         const nisabInfo: Record<string, string> = {
+            'Zakat Fitrah': 'Wajib bagi setiap muslim yang mampu - 2.5 kg beras atau setara per jiwa',
             'Zakat Maal': '85 gram emas (±Rp 8.500.000 - 12.000.000)*',
             'Zakat Profesi': '85 gram emas (±Rp 8.500.000 - 12.000.000)*',
             'Zakat Emas, Perak, dan Logam mulia': 'Emas: 85 gram, Perak: 595 gram (±Rp 8.500.000 - 12.000.000)*',
@@ -401,14 +440,29 @@ export default function HitungZakat() {
                                                         <Label htmlFor={field.id}>
                                                             {field.label} {field.required && <span className="text-red-500">*</span>}
                                                         </Label>
-                                                        <Input
-                                                            id={field.id}
-                                                            type={field.type}
-                                                            placeholder={field.placeholder}
-                                                            value={formData[field.id] || ''}
-                                                            onChange={(e) => handleInputChange(field.id, e.target.value)}
-                                                            required={field.required}
-                                                        />
+                                                        {field.type === 'select' ? (
+                                                            <select
+                                                                id={field.id}
+                                                                value={formData[field.id] || ''}
+                                                                onChange={(e) => handleInputChange(field.id, e.target.value)}
+                                                                required={field.required}
+                                                                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                            >
+                                                                <option value="">{field.placeholder}</option>
+                                                                {field.options?.map((option: any) => (
+                                                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                                                ))}
+                                                            </select>
+                                                        ) : (
+                                                            <Input
+                                                                id={field.id}
+                                                                type={field.type}
+                                                                placeholder={field.placeholder}
+                                                                value={formData[field.id] || ''}
+                                                                onChange={(e) => handleInputChange(field.id, e.target.value)}
+                                                                required={field.required}
+                                                            />
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -420,10 +474,14 @@ export default function HitungZakat() {
                                                     Total {selectedZakat} yang harus dibayar
                                                 </h4>
                                                 <p className="text-3xl font-bold text-purple-600">
-                                                    {formatCurrency(zakatAmount)}
+                                                    {selectedZakat === 'Zakat Fitrah' && formData.pilihan_bayar === 'beras' 
+                                                        ? `${zakatAmount} kg beras` 
+                                                        : formatCurrency(zakatAmount)
+                                                    }
                                                 </p>
                                                 <p className="text-sm text-gray-600 mt-2">
-                                                    Rate: {selectedZakat === 'Zakat Rikaz' ? '20%' : 
+                                                    Rate: {selectedZakat === 'Zakat Fitrah' ? '2.5 kg beras per jiwa' :
+                                                           selectedZakat === 'Zakat Rikaz' ? '20%' : 
                                                            selectedZakat === 'Zakat Pertanian, Perkebunan, dan Kehutanan' ? '5-10%' : 
                                                            selectedZakat === 'Zakat Pertambangan' ? '10-20%' : '2.5%'}
                                                 </p>
@@ -457,7 +515,8 @@ export default function HitungZakat() {
                                                                         <div className="p-4 bg-blue-50 rounded-lg">
                                 <h4 className="font-semibold text-blue-900 mb-2">Rate Zakat</h4>
                                 <p className="text-blue-800 text-sm">
-                                    {selectedZakat === 'Zakat Rikaz' ? '20% dari harta temuan' : 
+                                    {selectedZakat === 'Zakat Fitrah' ? '2.5 kg beras atau setara uang per jiwa' :
+                                     selectedZakat === 'Zakat Rikaz' ? '20% dari harta temuan' : 
                                      selectedZakat === 'Zakat Pertanian, Perkebunan, dan Kehutanan' ? '5% (dengan irigasi/biaya) atau 10% (tadah hujan)' : 
                                      selectedZakat === 'Zakat Pertambangan' ? '10% (biaya besar) atau 20% (mudah diperoleh)' :
                                      '2.5% dari total harta'}

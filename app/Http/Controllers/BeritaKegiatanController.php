@@ -28,6 +28,44 @@ class BeritaKegiatanController extends Controller
         ]);
     }
 
+    public function adminIndex()
+    {
+        $beritaKegiatan = BeritaKegiatan::orderBy('created_at', 'desc')->get();
+        
+        // Statistics
+        $totalBerita = BeritaKegiatan::where('jenis', 'berita')->count();
+        $totalKegiatan = BeritaKegiatan::where('jenis', 'kegiatan')->count();
+        $totalPublished = BeritaKegiatan::where('status', 'published')->count();
+        $totalDraft = BeritaKegiatan::where('status', 'draft')->count();
+        
+        return Inertia::render('admin/berita', [
+            'beritaKegiatan' => $beritaKegiatan->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'judul' => $item->judul,
+                    'slug' => $item->slug,
+                    'konten' => $item->konten,
+                    'ringkasan' => $item->ringkasan,
+                    'kategori' => $item->kategori,
+                    'jenis' => $item->jenis,
+                    'status' => $item->status,
+                    'gambar' => $item->gambar ? asset('storage/' . $item->gambar) : null,
+                    'tanggal_publikasi' => $item->tanggal_publikasi ? $item->tanggal_publikasi->format('Y-m-d') : null,
+                    'penulis' => $item->penulis,
+                    'created_at' => $item->created_at->format('Y-m-d H:i:s'),
+                    'updated_at' => $item->updated_at->format('Y-m-d H:i:s'),
+                ];
+            }),
+            'statistics' => [
+                'totalBerita' => $totalBerita,
+                'totalKegiatan' => $totalKegiatan,
+                'totalPublished' => $totalPublished,
+                'totalDraft' => $totalDraft,
+                'totalAll' => $totalBerita + $totalKegiatan
+            ]
+        ]);
+    }
+
     // API Methods for Frontend
     public function apiIndex(Request $request)
     {
@@ -165,5 +203,17 @@ class BeritaKegiatanController extends Controller
         $beritaKegiatan->delete();
 
         return response()->json(['success' => true, 'message' => 'Berita/Kegiatan berhasil dihapus!']);
+    }
+
+    public function toggleStatus(BeritaKegiatan $beritaKegiatan)
+    {
+        $newStatus = $beritaKegiatan->status === 'published' ? 'draft' : 'published';
+        $beritaKegiatan->update(['status' => $newStatus]);
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Status berhasil diubah menjadi ' . ($newStatus === 'published' ? 'Published' : 'Draft'),
+            'status' => $newStatus
+        ]);
     }
 } 

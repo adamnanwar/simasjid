@@ -7,6 +7,8 @@ use App\Models\Donation;
 use App\Models\JanjiTemu;
 use App\Models\Ustadz;
 use App\Models\BeritaKegiatan;
+use App\Models\PengurusMasjid;
+use App\Models\KegiatanMendatang;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -188,6 +190,25 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'data' => $banners
+        ]);
+    }
+
+    public function adminIndex()
+    {
+        // Get current month stats
+        $currentMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $stats = [
+            'totalPengurus' => PengurusMasjid::count(),
+            'totalJanjiTemu' => JanjiTemu::whereBetween('tanggal', [$currentMonth, $endOfMonth])->count(),
+            'totalDonasi' => Donation::sum('jumlah'), // Menggunakan semua donasi, bukan hanya confirmed
+            'totalBerita' => BeritaKegiatan::where('status', 'published')->count(),
+            'totalKegiatanMendatang' => KegiatanMendatang::where('status', 'published')->count(),
+        ];
+
+        return Inertia::render('admin/dashboard', [
+            'stats' => $stats
         ]);
     }
 }
