@@ -131,4 +131,27 @@ class PengurusMasjidController extends Controller
 
         return back()->with('message', 'Pengurus masjid berhasil dihapus!');
     }
+
+    // Admin method
+    public function adminIndex()
+    {
+        $pengurusMasjid = PengurusMasjid::orderBy('urutan')
+            ->orderBy('nama')
+            ->paginate(15);
+
+        // Statistics
+        $totalPengurus = PengurusMasjid::count();
+        $jabatan = PengurusMasjid::select('jabatan')
+            ->groupBy('jabatan')
+            ->get()
+            ->pluck('jabatan');
+
+        return Inertia::render('admin/pengurus-masjid', [
+            'pengurusMasjid' => $pengurusMasjid,
+            'stats' => [
+                'total' => $totalPengurus,
+                'jabatan' => $jabatan->count(),
+            ]
+        ]);
+    }
 } 

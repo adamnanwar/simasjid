@@ -89,7 +89,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Dashboard route - protected by admin middleware
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'adminIndex'])->name('dashboard');
-        Route::resource('pengurus-masjid', PengurusMasjidController::class);
+        
+        // Admin Pengurus Masjid routes
+        Route::get('/pengurus-masjid', [PengurusMasjidController::class, 'adminIndex'])->name('pengurus-masjid.index');
+        Route::post('/pengurus-masjid', [PengurusMasjidController::class, 'store'])->name('pengurus-masjid.store');
+        Route::put('/pengurus-masjid/{pengurusMasjid}', [PengurusMasjidController::class, 'update'])->name('pengurus-masjid.update');
+        Route::delete('/pengurus-masjid/{pengurusMasjid}', [PengurusMasjidController::class, 'destroy'])->name('pengurus-masjid.destroy');
         
         Route::get('/berita', [BeritaKegiatanController::class, 'adminIndex'])->name('berita.index');
         Route::post('/berita', [BeritaKegiatanController::class, 'store'])->name('berita.store');
@@ -184,10 +189,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('berita-kegiatan/{beritaKegiatan}', [BeritaKegiatanController::class, 'update'])->name('berita-kegiatan.update');
     Route::delete('berita-kegiatan/{beritaKegiatan}', [BeritaKegiatanController::class, 'destroy'])->name('berita-kegiatan.destroy');
     
-    Route::post('pengurus-masjid', [PengurusMasjidController::class, 'store'])->name('pengurus-masjid.store');
-    Route::put('pengurus-masjid/{pengurusMasjid}', [PengurusMasjidController::class, 'update'])->name('pengurus-masjid.update');
-    Route::delete('pengurus-masjid/{pengurusMasjid}', [PengurusMasjidController::class, 'destroy'])->name('pengurus-masjid.destroy');
-    
     Route::get('ustadz', [UstadzController::class, 'index'])->name('ustadz.index');
     Route::post('ustadz', [UstadzController::class, 'store'])->name('ustadz.store');
     Route::put('ustadz/{ustadz}', [UstadzController::class, 'update'])->name('ustadz.update');
@@ -195,3 +196,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+// Route alias for backward compatibility
+Route::get('login', function () {
+    return redirect()->route('admin.login');
+})->name('login');

@@ -168,4 +168,67 @@ class JanjiTemuController extends Controller
         
         return back()->with('message', 'Janji temu berhasil dihapus');
     }
+
+    // Admin methods
+    public function adminIndex()
+    {
+        $janjiTemu = JanjiTemu::with('ustadz')
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('waktu', 'desc')
+            ->paginate(15);
+
+        $ustadz = Ustadz::where('active', true)->get();
+
+        // Statistics
+        $totalJanjiTemu = JanjiTemu::count();
+        $pendingJanjiTemu = JanjiTemu::where('status', 'pending')->count();
+        $approvedJanjiTemu = JanjiTemu::where('status', 'approved')->count();
+        $rejectedJanjiTemu = JanjiTemu::where('status', 'rejected')->count();
+
+        return Inertia::render('admin/janji-temu', [
+            'janjiTemu' => $janjiTemu,
+            'ustadz' => $ustadz,
+            'stats' => [
+                'total' => $totalJanjiTemu,
+                'pending' => $pendingJanjiTemu,
+                'approved' => $approvedJanjiTemu,
+                'rejected' => $rejectedJanjiTemu,
+            ]
+        ]);
+    }
+
+    public function updateStatus(Request $request, JanjiTemu $janjiTemu)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,approved,rejected'
+        ]);
+
+        $janjiTemu->update([
+            'status' => $request->status
+        ]);
+
+        return back()->with('message', 'Status janji temu berhasil diperbarui');
+    }
+
+    public function storeUstadz(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'bidang_keahlian' => 'required|string|max:255',
+            'jadwal_tersedia' => 'required|array',
+            'jadwal_tersedia.*.hari' => 'required|string',
+            'jadwal_tersedia.*.jam_mulai' => 'required|string',
+            'jadwal_tersedia.*.jam_selesai' => 'required|string',
+            'active' => 'boolean'
+        ]);
+
+        $ustadz = Ustadz::create([
+            'nama' => $request->nama,
+            'bidang_keahlian' => $request->bidang_keahlian,
+            'jadwal_tersedia' => $request->jadwal_tersedia,
+            'active' => $request->get('active', true)
+        ]);
+
+        return back()->with('message', 'Ustadz berhasil ditambahkan');
+    }
 }
