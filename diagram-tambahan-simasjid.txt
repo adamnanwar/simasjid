@@ -1,0 +1,822 @@
+DIAGRAM TAMBAHAN SIMASJID - PLANTUML FORMAT
+===============================================
+Melengkapi diagram untuk semua fitur SIMASJID
+
+==============================================
+9. CLASS DIAGRAM - MODUL LENGKAP SIMASJID
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Class Diagram Modul Lengkap
+
+class User {
+  -id: bigint
+  -name: string
+  -email: string
+  -password: string
+  -role: enum(admin,user)
+  -last_login: timestamp
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +login(email, password): boolean
+  +logout(): void
+  +updateProfile(data): boolean
+  +checkRole(): string
+  +isAdmin(): boolean
+}
+
+class LaporanKas {
+  -id: bigint
+  -jenis: enum(masuk,keluar)
+  -keterangan: string
+  -jumlah: decimal(15,2)
+  -tanggal: date
+  -kategori: string
+  -admin_id: bigint
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +create(data): boolean
+  +update(id, data): boolean
+  +delete(id): boolean
+  +getAllTransaksi(): array
+  +getByPeriode(start, end): array
+  +calculateSaldoTotal(): decimal
+  +export(format, periode): string
+}
+
+class Donation {
+  -id: bigint
+  -nama_donatur: string
+  -email: string
+  -phone: string
+  -tanggal: date
+  -kategori: enum(Infaq,Sedekah,Zakat)
+  -jumlah: decimal(15,2)
+  -status: enum(pending,confirmed,rejected)
+  -anonim: boolean
+  -payment_method: string
+  -reference_number: string
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +create(data): boolean
+  +updateStatus(status): boolean
+  +sendNotification(): void
+  +generateReceipt(): string
+  +getByStatus(status): array
+}
+
+class JanjiTemu {
+  -id: bigint
+  -reference_number: string
+  -nama: string
+  -email: string
+  -telepon: string
+  -tanggal: date
+  -waktu: time
+  -keperluan: text
+  -ustadz_id: bigint
+  -status: enum(pending,approved,rejected)
+  -admin_notes: text
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +book(data): boolean
+  +approve(admin_id): boolean
+  +reject(reason): boolean
+  +checkConflict(ustadz_id, date, time): boolean
+  +sendConfirmation(): void
+}
+
+class Ustadz {
+  -id: bigint
+  -name: string
+  -email: string
+  -phone: string
+  -specialization: string
+  -experience: text
+  -schedule_days: json
+  -schedule_start_time: time
+  -schedule_end_time: time
+  -active: boolean
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +checkAvailability(date, time): boolean
+  +getSchedule(): array
+  +getAvailableSlots(date): array
+  +updateSchedule(schedule): boolean
+}
+
+class BeritaKegiatan {
+  -id: bigint
+  -slug: string
+  -judul: string
+  -konten: text
+  -jenis: enum(berita,kegiatan)
+  -status: enum(draft,published)
+  -tanggal_publikasi: datetime
+  -penulis: string
+  -author_id: bigint
+  -view_count: bigint
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +publish(): boolean
+  +draft(): boolean
+  +getPublished(): array
+  +incrementViewCount(): void
+  +generateSlug(): string
+}
+
+class PengurusMasjid {
+  -id: bigint
+  -nama: string
+  -jabatan: string
+  -phone: string
+  -email: string
+  -foto_url: string
+  -deskripsi: text
+  -urutan: integer
+  -active: boolean
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +create(data): boolean
+  +update(id, data): boolean
+  +reorder(new_order): boolean
+  +getActive(): array
+}
+
+' Relationships
+User ||--o{ LaporanKas : "manages"
+User ||--o{ BeritaKegiatan : "writes"
+User ||--o{ JanjiTemu : "approves"
+Ustadz ||--o{ JanjiTemu : "handles"
+
+@enduml
+```
+
+==============================================
+10. SEQUENCE DIAGRAM - KELOLA BERITA & KEGIATAN
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Sequence Diagram Kelola Berita & Kegiatan
+
+actor Admin
+participant "CMS Interface" as UI
+participant "BeritaController" as Controller
+participant "BeritaKegiatan Model" as Model
+participant "FileUploadService" as FileService
+participant "SEOService" as SEO
+database "Database" as DB
+
+Admin -> UI: akses_menu_berita()
+activate UI
+
+UI -> Controller: getBeritaList()
+activate Controller
+
+Controller -> Model: getAllBerita()
+activate Model
+
+Model -> DB: SELECT * FROM berita_kegiatan ORDER BY created_at DESC
+activate DB
+DB --> Model: berita_list
+deactivate DB
+
+Model --> Controller: berita_data[]
+deactivate Model
+
+Controller --> UI: render_berita_dashboard(data)
+deactivate Controller
+
+UI --> Admin: tampilkan_dashboard_berita()
+deactivate UI
+
+== Buat Artikel Baru ==
+
+Admin -> UI: klik_buat_artikel()
+activate UI
+
+UI -> Controller: createBerita()
+activate Controller
+
+Controller --> UI: render_editor_form()
+deactivate Controller
+
+UI --> Admin: tampilkan_rich_text_editor()
+deactivate UI
+
+Admin -> UI: input_artikel_data(title, content, category)
+activate UI
+
+== Upload Featured Image ==
+
+Admin -> UI: upload_featured_image(file)
+
+UI -> FileService: uploadImage(file)
+activate FileService
+
+FileService -> FileService: validateImageFile()
+note right: Validasi:\n- Format (jpg, png, webp)\n- Size (max 2MB)\n- Dimensions
+
+alt Valid Image
+    FileService -> FileService: processImage()
+    note right: Resize, optimize,\ngenerate thumbnails
+    
+    FileService -> DB: INSERT INTO media_files
+    activate DB
+    DB --> FileService: file_record
+    deactivate DB
+    
+    FileService --> UI: upload_success(file_url)
+else Invalid Image
+    FileService --> UI: upload_error(message)
+end
+
+deactivate FileService
+
+== Save Article ==
+
+Admin -> UI: save_artikel(action)
+note right: action: draft/publish
+
+UI -> Controller: storeBerita(request_data)
+activate Controller
+
+Controller -> Controller: validateArticleData()
+
+alt Data Valid
+    Controller -> SEO: generateSlug(title)
+    activate SEO
+    SEO --> Controller: seo_friendly_slug
+    deactivate SEO
+    
+    Controller -> SEO: optimizeMetaData(content)
+    activate SEO
+    SEO --> Controller: meta_title, meta_description
+    deactivate SEO
+    
+    Controller -> Model: create(article_data)
+    activate Model
+    
+    Model -> DB: INSERT INTO berita_kegiatan
+    activate DB
+    DB --> Model: article_id
+    deactivate DB
+    
+    alt Action = Publish
+        Model -> Model: setPublishedStatus()
+        Model -> DB: UPDATE status = 'published'
+        activate DB
+        DB --> Model: update_success
+        deactivate DB
+        
+        note right of Model: Clear cache,\nnotify subscribers
+    end
+    
+    Model --> Controller: article_created
+    deactivate Model
+    
+    Controller --> UI: redirect_with_success()
+    
+else Data Invalid
+    Controller --> UI: return_validation_errors()
+end
+
+deactivate Controller
+
+UI --> Admin: tampilkan_hasil_save()
+deactivate UI
+
+== Publish Scheduled ==
+
+note over Controller: Background Job (Cron)
+
+Controller -> Model: getScheduledArticles()
+activate Model
+
+Model -> DB: SELECT * FROM berita_kegiatan WHERE status='scheduled'
+activate DB
+DB --> Model: scheduled_articles
+deactivate DB
+
+Model --> Controller: articles_to_publish[]
+deactivate Model
+
+loop for each scheduled article
+    Controller -> Model: publishArticle(article_id)
+    activate Model
+    
+    Model -> DB: UPDATE status='published', tanggal_publikasi=NOW()
+    activate DB
+    DB --> Model: publish_success
+    deactivate DB
+    
+    Model --> Controller: article_published
+    deactivate Model
+end
+
+@enduml
+```
+
+==============================================
+11. FLOWCHART - KELOLA PENGURUS MASJID
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Flowchart Kelola Pengurus Masjid
+
+start
+:Admin akses menu "Kelola Pengurus";
+:Load daftar pengurus current;
+
+:Tampilkan struktur organisasi:
+- Ketua
+- Wakil Ketua  
+- Sekretaris
+- Bendahara
+- Anggota;
+
+:Pilih aksi manajemen;
+switch (Aksi yang dipilih?)
+case (Tambah Pengurus Baru)
+  :Tampilkan form input pengurus;
+  :Admin input data:
+  - Nama lengkap
+  - Jabatan
+  - Contact info
+  - Foto
+  - Deskripsi/Bio
+  - Periode jabatan;
+  
+  :Validasi data input;
+  if (Data valid?) then (tidak)
+    :Tampilkan error message;
+    goto Tampilkan form input pengurus
+  else (ya)
+    :Upload foto pengurus;
+    if (Upload berhasil?) then (tidak)
+      :Use default avatar;
+    endif
+    
+    :Simpan data ke database;
+    :Set urutan/posisi dalam struktur;
+    :Log aktivitas admin;
+    :Tampilkan notifikasi sukses;
+  endif
+  
+case (Edit Data Pengurus)
+  :Pilih pengurus dari list;
+  :Load data pengurus terpilih;
+  :Tampilkan form edit dengan data existing;
+  
+  :Admin modifikasi data yang diperlukan;
+  
+  :Validasi perubahan;
+  if (Data valid?) then (tidak)
+    :Tampilkan validation errors;
+    goto Tampilkan form edit dengan data existing
+  else (ya)
+    if (Foto diubah?) then (ya)
+      :Upload foto baru;
+      :Hapus foto lama;
+    endif
+    
+    :Update data di database;
+    :Log perubahan data;
+    :Tampilkan notifikasi sukses;
+  endif
+  
+case (Reorder Struktur)
+  :Tampilkan interface drag-drop;
+  :Admin drag pengurus ke posisi baru;
+  
+  :Update urutan dalam database;
+  :Refresh tampilan struktur;
+  :Log perubahan urutan;
+  
+case (Nonaktifkan Pengurus)
+  :Pilih pengurus yang akan dinonaktifkan;
+  :Tampilkan konfirmasi;
+  :Input alasan nonaktifkan (optional);
+  
+  if (Admin konfirmasi?) then (ya)
+    :Set status = inactive;
+    :Set tanggal berakhir jabatan;
+    :Archive data pengurus;
+    :Update struktur organisasi;
+    :Log perubahan status;
+  else (tidak)
+    :Batalkan operasi;
+  endif
+  
+case (Lihat Riwayat Pengurus)
+  :Load data pengurus history;
+  :Tampilkan timeline pengurus:
+  - Periode aktif
+  - Jabatan yang pernah dipegang
+  - Status changes;
+  
+case (Export Struktur)
+  :Pilih format export (PDF/Excel);
+  :Generate file struktur organisasi;
+  :Include:
+  - Foto pengurus
+  - Data contact
+  - Periode jabatan
+  - Organizational chart;
+  
+  :Download file;
+  :Log aktivitas export;
+  
+case (Pengaturan Periode)
+  :Set periode kepengurusan baru;
+  :Input tanggal mulai & selesai;
+  :Konfirmasi pergantian periode;
+  
+  if (Ganti periode?) then (ya)
+    :Archive pengurus periode lama;
+    :Setup struktur periode baru;
+    :Send notification ke pengurus baru;
+  endif
+endswitch
+
+:Refresh halaman pengurus;
+:Update tampilan struktur organisasi;
+
+if (Admin ingin melakukan aksi lain?) then (ya)
+  goto Pilih aksi manajemen
+else (tidak)
+  stop
+endif
+
+@enduml
+```
+
+==============================================
+12. USE CASE DIAGRAM - KELOLA USTADZ
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Use Case Diagram Kelola Ustadz
+
+left to right direction
+
+actor Admin as A
+actor Ustadz as U
+actor "Jemaah" as J
+
+rectangle "Sistem Kelola Ustadz" {
+  
+  package "Manajemen Ustadz (Admin)" {
+    usecase "Tambah Ustadz Baru" as UC1
+    usecase "Edit Profile Ustadz" as UC2
+    usecase "Set Jadwal Ustadz" as UC3
+    usecase "Nonaktifkan Ustadz" as UC4
+    usecase "Lihat Statistik Ustadz" as UC5
+    usecase "Export Laporan Ustadz" as UC6
+  }
+  
+  package "Self Management (Ustadz)" {
+    usecase "Update Profile Sendiri" as UC7
+    usecase "Set Availability" as UC8
+    usecase "Lihat Jadwal Konsultasi" as UC9
+    usecase "Konfirmasi Janji Temu" as UC10
+    usecase "Reschedule Appointment" as UC11
+  }
+  
+  package "Public Access (Jemaah)" {
+    usecase "Lihat Daftar Ustadz" as UC12
+    usecase "Lihat Profile Detail Ustadz" as UC13
+    usecase "Cek Availability Ustadz" as UC14
+    usecase "Rating & Review Ustadz" as UC15
+  }
+  
+}
+
+' Admin connections
+A --> UC1
+A --> UC2
+A --> UC3
+A --> UC4
+A --> UC5
+A --> UC6
+
+' Ustadz connections
+U --> UC7
+U --> UC8
+U --> UC9
+U --> UC10
+U --> UC11
+
+' Jemaah connections
+J --> UC12
+J --> UC13
+J --> UC14
+J --> UC15
+
+' Dependencies
+UC3 ..> UC8 : conflicts
+UC10 ..> UC9 : extends
+UC11 ..> UC9 : extends
+
+@enduml
+```
+
+==============================================
+13. ACTIVITY DIAGRAM - SET JADWAL USTADZ
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Activity Diagram Set Jadwal Ustadz
+
+|Admin|
+start
+:Akses menu "Kelola Ustadz";
+:Pilih ustadz untuk set jadwal;
+
+|System|
+:Load data ustadz terpilih;
+:Tampilkan current schedule;
+:Load existing appointments;
+
+|Admin|
+:Pilih mode pengaturan jadwal;
+
+switch (Mode pengaturan?)
+case (Set Regular Schedule)
+  :Pilih hari-hari aktif;
+  :Set jam mulai konsultasi;
+  :Set jam selesai konsultasi;
+  :Set durasi per session;
+  :Set break time between sessions;
+  :Set maksimal appointment per hari;
+  
+  |System|
+  :Validasi jadwal tidak conflict;
+  if (Ada conflict dengan appointment existing?) then (ya)
+    :Tampilkan conflict warning;
+    :Show conflicting appointments;
+    |Admin|
+    if (Force update?) then (tidak)
+      goto Pilih hari-hari aktif
+    endif
+  endif
+  
+  :Generate time slots otomatis;
+  :Update ustadz schedule;
+  
+case (Set Exception/Holiday)
+  :Pilih tanggal exception;
+  :Set status (holiday/unavailable/special hours);
+  
+  if (Special hours?) then (ya)
+    :Set jam khusus untuk tanggal tersebut;
+  endif
+  
+  |System|
+  :Check existing appointments di tanggal exception;
+  if (Ada appointment terjadwal?) then (ya)
+    :Tampilkan daftar appointment terdampak;
+    |Admin|
+    :Pilih aksi untuk appointment:
+    - Cancel & reschedule
+    - Keep appointment
+    - Move to different ustadz;
+  endif
+  
+  :Save exception to database;
+  
+case (Bulk Schedule Update)
+  :Upload file CSV dengan jadwal;
+  
+  |System|
+  :Validasi format CSV;
+  :Check data integrity;
+  :Preview changes;
+  
+  |Admin|
+  :Review preview;
+  if (Approve bulk update?) then (ya)
+    |System|
+    :Process bulk update;
+    :Handle conflicts automatically;
+    :Generate report hasil update;
+  else (tidak)
+    :Cancel bulk update;
+  endif
+endswitch
+
+|System|
+:Update availability cache;
+:Recalculate available slots;
+
+fork
+  :Send notification ke ustadz;
+  note right: Email/SMS tentang\nperubahan jadwal
+fork again
+  :Update public calendar;
+  note right: Calendar yang dilihat\njemaah untuk booking
+fork again
+  :Log schedule changes;
+  note right: Audit trail untuk\ntracking perubahan
+end fork
+
+|Admin|
+:Review updated schedule;
+:Test booking system dengan jadwal baru;
+
+if (Jadwal sudah sesuai?) then (tidak)
+  goto Pilih mode pengaturaan jadwal
+else (ya)
+  :Publish jadwal baru;
+  |System|
+  :Clear relevant caches;
+  :Update frontend calendar;
+  :Notify affected systems;
+endif
+
+stop
+
+@enduml
+```
+
+==============================================
+14. DATABASE SCHEMA RELATIONSHIPS
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Database Relationships Diagram
+
+!define PRIMARY_KEY #FFE4E1
+!define FOREIGN_KEY #E1F5FE
+
+entity "users" as users {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(255)
+  * email : varchar(255)
+  * password : varchar(255)
+  * role : enum(admin,user)
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "laporan_kas" as kas {
+  * id : bigint <<PK>>
+  --
+  * jenis : enum(masuk,keluar)
+  * keterangan : varchar(255)
+  * jumlah : decimal(15,2)
+  * tanggal : date
+  * kategori : varchar(100)
+  admin_id : bigint <<FK>>
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "donations" as donations {
+  * id : bigint <<PK>>
+  --
+  * nama_donatur : varchar(255)
+  * email : varchar(255)
+  * phone : varchar(20)
+  * tanggal : date
+  * kategori : enum(Infaq,Sedekah,Zakat)
+  * jumlah : decimal(15,2)
+  * status : enum(pending,confirmed,rejected)
+  * anonim : boolean
+  admin_id : bigint <<FK>>
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "ustadzs" as ustadz {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(255)
+  * email : varchar(255)
+  * phone : varchar(20)
+  * specialization : varchar(255)
+  * schedule_days : json
+  * schedule_start_time : time
+  * schedule_end_time : time
+  * active : boolean
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "janji_temus" as janji {
+  * id : bigint <<PK>>
+  --
+  * reference_number : varchar(20)
+  * nama : varchar(255)
+  * email : varchar(255)
+  * telepon : varchar(20)
+  * tanggal : date
+  * waktu : time
+  * keperluan : text
+  ustadz_id : bigint <<FK>>
+  approved_by : bigint <<FK>>
+  * status : enum(pending,approved,rejected)
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "berita_kegiatan" as berita {
+  * id : bigint <<PK>>
+  --
+  * slug : varchar(255)
+  * judul : varchar(255)
+  * konten : text
+  * jenis : enum(berita,kegiatan)
+  * status : enum(draft,published)
+  * tanggal_publikasi : datetime
+  * penulis : varchar(255)
+  author_id : bigint <<FK>>
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "pengurus_masjid" as pengurus {
+  * id : bigint <<PK>>
+  --
+  * nama : varchar(255)
+  * jabatan : varchar(100)
+  * phone : varchar(20)
+  * email : varchar(255)
+  * foto_url : varchar(500)
+  * deskripsi : text
+  * urutan : integer
+  * active : boolean
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+' Relationships
+users ||--o{ kas : admin_id
+users ||--o{ donations : admin_id
+users ||--o{ janji : approved_by
+users ||--o{ berita : author_id
+
+ustadz ||--o{ janji : ustadz_id
+
+' Notes
+note top of users : Tabel utama autentikasi\ndan otorisasi
+note right of kas : Financial transactions\ndengan admin tracking
+note right of donations : Donation management\nwith approval workflow
+note left of ustadz : Religious scholar data\nwith scheduling
+note bottom of janji : Appointment booking\nsystem
+note left of berita : Content management\nfor news & events
+note top of pengurus : Organization structure\nmanagement
+
+@enduml
+```
+
+==============================================
+RINGKASAN DIAGRAM LENGKAP
+==============================================
+
+**TOTAL 14 DIAGRAM COMPREHENSIVE:**
+
+**ANALISIS & PERANCANGAN:**
+1. Use Case Diagram Keseluruhan
+2. Use Case Diagram Kelola Donasi  
+3. Use Case Diagram Kelola Ustadz
+
+**PROSES BISNIS:**
+4. Activity Diagram Login & Authentication
+5. Activity Diagram Proses Donasi Online
+6. Activity Diagram Set Jadwal Ustadz
+
+**INTERAKSI SISTEM:**
+7. Sequence Diagram Kelola Kas Masjid
+8. Sequence Diagram Booking Janji Temu
+9. Sequence Diagram Kelola Berita & Kegiatan
+
+**ALUR KERJA:**
+10. Flowchart Proses Kelola Kas Masjid
+11. Flowchart Approval Janji Temu (Admin)
+12. Flowchart Kelola Pengurus Masjid
+
+**STRUKTUR SISTEM:**
+13. Class Diagram Modul Lengkap SIMASJID
+14. Database Schema Relationships
+
+**SIAP PAKAI UNTUK:**
+✅ Dokumentasi Tugas Akhir
+✅ System Design Document  
+✅ Developer Documentation
+✅ User Manual Reference
+✅ Stakeholder Presentation 

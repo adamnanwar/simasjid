@@ -1,0 +1,195 @@
+ACTIVITY DIAGRAM SISTEM BERJALAN SIMASJID
+=====================================
+
+1. ACTIVITY DIAGRAM - PENGELOLAAN KAS MASJID (SISTEM BERJALAN)
+-------------------------------------
+
+```plantuml
+@startuml
+title Pengelolaan Kas Masjid (Sistem Berjalan)
+
+|Bendahara|
+start
+:Terima uang/nota pengeluaran;
+:Hitung jumlah manual;
+:Catat di buku kas harian;
+
+|DKM|
+:Verifikasi catatan;
+if (Data valid?) then (tidak)
+  :Minta koreksi;
+  :Diskusi dengan bendahara;
+else (ya)
+  :Tanda tangan verifikasi;
+endif
+
+|Bendahara|
+:Simpan bukti transaksi;
+:Input ke Excel bulanan;
+:Hitung total manual;
+:Buat laporan bulanan;
+
+|DKM|
+:Review laporan;
+if (Laporan OK?) then (tidak)
+  :Revisi laporan;
+else (ya)
+  :Tanda tangan laporan;
+  :Arsipkan laporan;
+endif
+
+stop
+@enduml
+```
+
+2. ACTIVITY DIAGRAM - PENGELOLAAN DONASI (SISTEM BERJALAN)
+-------------------------------------
+
+```plantuml
+@startuml
+title Pengelolaan Donasi (Sistem Berjalan)
+
+|Donatur|
+start
+:Datang ke masjid;
+:Serahkan donasi;
+
+|Petugas|
+:Hitung donasi;
+:Catat di buku donasi;
+:Buat kwitansi manual;
+:Simpan uang di brankas;
+
+|Bendahara|
+:Rekap donasi harian;
+:Input ke buku besar;
+:Buat laporan mingguan;
+
+|DKM|
+:Review laporan;
+:Update papan informasi;
+:Arsipkan dokumentasi;
+
+stop
+@enduml
+```
+
+3. ACTIVITY DIAGRAM - PENJADWALAN KEGIATAN (SISTEM BERJALAN)
+-------------------------------------
+
+```plantuml
+@startuml
+title Penjadwalan Kegiatan dan Ustadz (Sistem Berjalan)
+
+|Koordinator|
+start
+:Buat rencana kegiatan;
+:Hubungi ustadz via telepon;
+
+|Ustadz|
+:Konfirmasi ketersediaan;
+if (Bisa hadir?) then (tidak)
+  :Informasi tidak bisa hadir;
+  :Usulkan jadwal alternatif;
+else (ya)
+  :Konfirmasi jadwal;
+endif
+
+|Koordinator|
+:Catat di kalender;
+:Update papan pengumuman;
+:Informasi ke pengurus;
+
+|Pengurus|
+:Siapkan kebutuhan acara;
+:Dokumentasi kegiatan;
+:Catat di buku kegiatan;
+
+stop
+@enduml
+```
+
+4. ACTIVITY DIAGRAM - MANAJEMEN PENGURUS (SISTEM BERJALAN)
+-------------------------------------
+
+```plantuml
+@startuml
+title Manajemen Pengurus (Sistem Berjalan)
+
+|Ketua DKM|
+start
+:Terima lamaran;
+:Review berkas;
+
+|Sekretaris|
+:Arsip berkas fisik;
+:Input data ke Excel;
+
+|Ketua DKM|
+if (Diterima?) then (ya)
+  :Buat SK manual;
+  :Tanda tangan SK;
+  
+  |Sekretaris|
+  :Copy SK;
+  :Arsip SK;
+  :Update data pengurus;
+  
+else (tidak)
+  :Informasi penolakan;
+  :Arsip berkas;
+endif
+
+|Pengurus Baru|
+if (Diterima?) then (ya)
+  :Terima SK;
+  :Mulai bertugas;
+  :Isi buku presensi;
+endif
+
+stop
+@enduml
+```
+
+5. ACTIVITY DIAGRAM - PELAPORAN DAN DOKUMENTASI (SISTEM BERJALAN)
+-------------------------------------
+
+```plantuml
+@startuml
+title Pelaporan dan Dokumentasi (Sistem Berjalan)
+
+|Sekretaris|
+start
+:Kumpulkan buku-buku;
+:Kumpulkan nota/kwitansi;
+:Input data ke Excel;
+
+|Bendahara|
+:Verifikasi data keuangan;
+:Sesuaikan dengan bukti;
+if (Data sesuai?) then (tidak)
+  :Koreksi data;
+else (ya)
+  :Tanda tangan verifikasi;
+endif
+
+|Sekretaris|
+:Print laporan;
+:Siapkan lampiran;
+
+|Ketua DKM|
+:Review laporan;
+if (Laporan OK?) then (tidak)
+  :Minta revisi;
+else (ya)
+  :Tanda tangan;
+  
+  |Sekretaris|
+  :Copy laporan;
+  :Arsip di ordner;
+  :Simpan scan di PC;
+endif
+
+stop
+@enduml
+``` 

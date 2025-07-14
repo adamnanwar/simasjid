@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ustadzs', function (Blueprint $table) {
-            // Add new structured schedule fields
-            $table->json('schedule_days')->after('schedule'); // Array of days: ['Senin', 'Selasa', ...]
-            $table->time('schedule_start_time')->after('schedule_days'); // Start time: 08:00
-            $table->time('schedule_end_time')->after('schedule_start_time'); // End time: 17:00
+            // Add new structured schedule fields with nullable or default values
+            $table->json('schedule_days')->nullable()->after('schedule'); // Array of days: ['Senin', 'Selasa', ...]
+            $table->time('schedule_start_time')->nullable()->after('schedule_days'); // Start time: 08:00
+            $table->time('schedule_end_time')->nullable()->after('schedule_start_time'); // End time: 17:00
             
             // Keep the old schedule field for backward compatibility (will be removed later)
             $table->text('schedule')->nullable()->change();

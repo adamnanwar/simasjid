@@ -1,0 +1,99 @@
+INSTRUKSI DRAW.IO - FLOWCHART KELOLA KAS MASJID SIMASJID
+============================================================
+
+STEP 1: BUAT SHAPES BERIKUT (dari atas ke bawah):
+------------------------------------------------
+
+1. [OVAL] "Start" (Warna: Light Blue)
+2. [RECTANGLE] "Admin Login ke SIMASJID" (Warna: White)
+3. [RECTANGLE] "Pilih Menu Kelola Kas Masjid" (Warna: White)
+4. [RECTANGLE] "Tampilkan Daftar Transaksi Kas" (Warna: White)
+5. [DIAMOND] "Pilih Aksi" (Warna: Light Orange)
+
+-- BRANCH KIRI (Tambah Transaksi):
+6. [RECTANGLE] "Tampilkan Form Input" (Warna: White)
+7. [RECTANGLE] "Input Data: Jenis, Tanggal, Kategori, Jumlah, Keterangan" (Warna: White)
+8. [DIAMOND] "Data Valid?" (Warna: Light Orange)
+9. [RECTANGLE] "Tampilkan Error Validation" (Warna: Light Red)
+10. [RECTANGLE] "Simpan ke Database" (Warna: White)
+
+-- BRANCH TENGAH KIRI (Edit Transaksi):
+11. [RECTANGLE] "Pilih Transaksi yang akan diubah" (Warna: White)
+12. [RECTANGLE] "Load Data ke Form" (Warna: White)
+13. [RECTANGLE] "Update Informasi" (Warna: White)
+14. [DIAMOND] "Data Valid?" (Warna: Light Orange)
+15. [RECTANGLE] "Tampilkan Error Validation" (Warna: Light Red)
+16. [RECTANGLE] "Update Database" (Warna: White)
+
+-- BRANCH TENGAH KANAN (Hapus Transaksi):
+17. [RECTANGLE] "Pilih Transaksi yang akan dihapus" (Warna: White)
+18. [DIAMOND] "Konfirmasi Hapus?" (Warna: Light Orange)
+19. [RECTANGLE] "Batal Operasi" (Warna: White)
+20. [RECTANGLE] "Hapus dari Database" (Warna: White)
+
+-- BRANCH KANAN (Filter Data):
+21. [RECTANGLE] "Input Kriteria Filter" (Warna: White)
+22. [RECTANGLE] "Apply Filter" (Warna: White)
+23. [RECTANGLE] "Tampilkan Hasil Filter" (Warna: White)
+
+-- BAGIAN BAWAH (Merge):
+24. [RECTANGLE] "Update Saldo Kas" (Warna: White)
+25. [RECTANGLE] "Refresh Daftar Transaksi" (Warna: White)
+26. [RECTANGLE] "Tampilkan Notifikasi Sukses" (Warna: Light Green)
+27. [OVAL] "End" (Warna: Light Blue)
+
+STEP 2: HUBUNGKAN DENGAN ARROWS (URUTAN PENTING!):
+------------------------------------------------
+
+ALUR UTAMA (VERTIKAL):
+1 → 2 → 3 → 4 → 5
+
+DARI DECISION "Pilih Aksi" (box 5):
+5 → 6 (label: "Tambah Transaksi")
+5 → 11 (label: "Edit Transaksi") 
+5 → 17 (label: "Hapus Transaksi")
+5 → 21 (label: "Filter Data")
+
+ALUR TAMBAH TRANSAKSI:
+6 → 7 → 8
+8 → 9 (label: "Tidak")
+9 → 7 (LOOP BALIK)
+8 → 10 (label: "Ya")
+10 → 24
+
+ALUR EDIT TRANSAKSI:
+11 → 12 → 13 → 14
+14 → 15 (label: "Tidak")
+15 → 13 (LOOP BALIK)
+14 → 16 (label: "Ya")
+16 → 24
+
+ALUR HAPUS TRANSAKSI:
+17 → 18
+18 → 19 (label: "Tidak")
+18 → 20 (label: "Ya")
+19 → 25
+20 → 24
+
+ALUR FILTER DATA:
+21 → 22 → 23 → 25
+
+ALUR AKHIR:
+24 → 25 → 26 → 27
+
+STEP 3: ATUR LAYOUT:
+------------------
+- Letakkan box 1-5 di tengah (vertikal)
+- Branch Tambah (6-10) di sebelah kiri
+- Branch Edit (11-16) di kiri tengah
+- Branch Hapus (17-20) di kanan tengah  
+- Branch Filter (21-23) di sebelah kanan
+- Box 24-27 di tengah bawah (vertikal)
+
+STEP 4: WARNA:
+-------------
+- Oval (Start/End): #E1F5FE
+- Rectangle biasa: #FFFFFF
+- Diamond: #FFF3E0
+- Error box: #FFEBEE
+- Success box: #E8F5E8 

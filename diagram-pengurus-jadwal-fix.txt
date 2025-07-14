@@ -1,0 +1,298 @@
+DIAGRAM PERBAIKAN UNTUK KELOLA PENGURUS DAN SET JADWAL
+==============================================
+
+1. FLOWCHART - KELOLA PENGURUS MASJID
+-------------------------------------
+
+```plantuml
+@startuml
+title SIMASJID - Flowchart Kelola Pengurus Masjid
+
+|Admin|
+start
+:Login ke sistem;
+:Akses menu "Kelola Pengurus";
+
+|System|
+:Validasi akses admin;
+if (Akses valid?) then (tidak)
+    :Tampilkan error akses;
+    stop
+else (ya)
+    :Load data pengurus;
+    :Load struktur organisasi;
+endif
+
+|Admin|
+:Lihat dashboard pengurus;
+note right
+    Dashboard menampilkan:
+    - Total pengurus aktif
+    - Jabatan kosong
+    - Pengurus akan berakhir masa jabatan
+    - Statistik keaktifan
+end note
+
+:Pilih aksi manajemen;
+
+switch (Aksi yang dipilih?)
+case (Tambah Pengurus Baru)
+    |System|
+    :Cek kuota jabatan;
+    if (Jabatan tersedia?) then (tidak)
+        :Tampilkan warning kuota penuh;
+        :Sarankan update struktur;
+    else (ya)
+        |Admin|
+        :Tampilkan form input pengurus;
+        :Input data pengurus:;
+        note right
+            Data wajib:
+            - Nama lengkap
+            - NIK
+            - Tempat/Tanggal lahir
+            - Alamat
+            - Jabatan
+            - Contact info (email, phone)
+            - Foto
+            - Deskripsi/Bio
+            - Periode jabatan
+            - Dokumen pendukung
+        end note
+        
+        |System|
+        :Validasi kelengkapan data;
+        :Validasi format data;
+        if (Data lengkap & valid?) then (tidak)
+            :Highlight field error;
+            :Tampilkan pesan error;
+            |Admin|
+            :Perbaiki input data;
+        else (ya)
+            :Generate ID pengurus;
+            :Simpan data ke database;
+            :Create akun sistem;
+            :Kirim email aktivasi;
+            
+            |Admin|
+            :Upload dokumen pendukung;
+            :Set hak akses sistem;
+            
+            |System|
+            :Update struktur organisasi;
+            :Kirim notifikasi:;
+            note right
+                - Email ke pengurus baru
+                - Notif ke ketua DKM
+                - Update dashboard
+            end note
+        endif
+    endif
+
+case (Edit Data Pengurus)
+    |Admin|
+    :Pilih pengurus dari list;
+    
+    |System|
+    :Load detail pengurus;
+    :Tampilkan riwayat jabatan;
+    
+    |Admin|
+    :Pilih data yang akan diupdate;
+    switch (Tipe update?)
+    case (Update Personal Info)
+        :Edit data pribadi;
+        :Upload dokumen baru;
+    case (Update Jabatan)
+        :Pilih jabatan baru;
+        :Set periode jabatan;
+        :Input SK pergantian;
+    case (Update Akses)
+        :Modifikasi hak akses;
+        :Set pembatasan fitur;
+    end switch
+    
+    |System|
+    :Validasi perubahan;
+    if (Perubahan valid?) then (ya)
+        :Simpan perubahan;
+        :Log aktivitas update;
+        :Kirim notifikasi update;
+    else (tidak)
+        :Tampilkan error;
+        :Rollback perubahan;
+    endif
+
+case (Nonaktifkan Pengurus)
+    |Admin|
+    :Pilih pengurus;
+    :Input alasan nonaktif;
+    :Set tanggal berakhir;
+    
+    |System|
+    :Validasi dependencies;
+    if (Ada tugas pending?) then (ya)
+        :Tampilkan warning;
+        :List tugas pending;
+        
+        |Admin|
+        :Pilih pengganti tugas;
+        :Konfirmasi transfer tugas;
+    endif
+    
+    |Admin|
+    :Konfirmasi final nonaktif;
+    if (Konfirmasi OK?) then (ya)
+        |System|
+        :Update status pengurus;
+        :Nonaktifkan akun sistem;
+        :Archive data pengurus;
+        :Update struktur organisasi;
+        :Generate surat pemberhentian;
+        :Kirim notifikasi ke semua pihak;
+    else (tidak)
+        :Batalkan proses;
+    endif
+
+case (Lihat Laporan)
+    |Admin|
+    :Pilih jenis laporan;
+    switch (Tipe laporan?)
+    case (Laporan Struktur)
+        :Set periode laporan;
+        :Pilih format output;
+    case (Laporan Kinerja)
+        :Pilih pengurus;
+        :Set periode evaluasi;
+        :Pilih metrik kinerja;
+    case (Laporan Keaktifan)
+        :Set range tanggal;
+        :Pilih departemen;
+    end switch
+    
+    |System|
+    :Generate laporan;
+    :Tampilkan preview;
+    
+    |Admin|
+    :Review laporan;
+    if (Perlu revisi?) then (ya)
+        :Adjust parameter;
+    else (tidak)
+        :Export laporan;
+        :Simpan ke arsip;
+    endif
+
+case (Manajemen Dokumen)
+    |Admin|
+    :Pilih kategori dokumen;
+    :Upload file baru/Update;
+    
+    |System|
+    :Validasi file;
+    :Scan virus/malware;
+    if (File aman?) then (ya)
+        :Simpan ke storage;
+        :Update database;
+    else (tidak)
+        :Tolak file;
+        :Tampilkan warning;
+    endif
+end switch
+
+|System|
+:Refresh data dashboard;
+:Update log aktivitas;
+
+|Admin|
+:Review perubahan;
+:Logout atau lanjut aktivitas lain;
+
+stop
+
+@enduml
+```
+
+2. ACTIVITY DIAGRAM - SET JADWAL USTADZ
+-------------------------------------
+
+```plantuml
+@startuml
+title SIMASJID - Activity Diagram Set Jadwal Ustadz
+
+|Admin|
+start
+:Akses menu "Kelola Ustadz";
+:Pilih ustadz untuk set jadwal;
+
+|System|
+:Load data ustadz terpilih;
+:Tampilkan current schedule;
+:Load existing appointments;
+
+|Admin|
+:Pilih mode pengaturan jadwal;
+
+switch (Mode pengaturan?)
+case (Set Regular Schedule)
+  :Pilih hari-hari aktif;
+  :Set jam mulai konsultasi;
+  :Set jam selesai konsultasi;
+  :Set durasi per session;
+  :Set break time between sessions;
+  :Set maksimal appointment per hari;
+
+  |System|
+  :Validasi jadwal tidak conflict;
+  if (Ada conflict dengan appointment existing?) then (ya)
+    :Tampilkan conflict warning;
+    :Show conflicting appointments;
+    
+    |Admin|
+    if (Force update?) then (ya)
+      :Reschedule conflicting appointments;
+      :Kirim notifikasi perubahan;
+    else (tidak)
+      :Revisi jadwal;
+      goto Pilih hari-hari aktif
+    endif
+  endif
+
+case (Set Custom Schedule)
+  :Pilih tanggal spesifik;
+  :Set jadwal khusus;
+  :Set keterangan;
+  
+  |System|
+  :Cek konflik jadwal;
+  if (Ada conflict?) then (ya)
+    :Tampilkan warning;
+    
+    |Admin|
+    :Pilih resolusi conflict;
+  endif
+
+case (Block Time Off)
+  :Pilih periode;
+  :Set alasan;
+  :Set auto-reply message;
+  
+  |System|
+  :Update calendar;
+  :Reschedule affected appointments;
+  :Send notifications;
+end switch
+
+|System|
+:Save schedule changes;
+:Update calendar view;
+:Generate notifications;
+
+|Admin|
+:Review perubahan;
+:Konfirmasi final;
+
+stop
+
+@enduml
+``` 

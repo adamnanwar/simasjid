@@ -1,0 +1,669 @@
+KOLEKSI LENGKAP DIAGRAM SIMASJID - PLANTUML FORMAT
+======================================================
+Siap digunakan di www.planttext.com
+
+==============================================
+1. USE CASE DIAGRAM
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Use Case Diagram
+
+left to right direction
+
+actor Admin as A
+actor "Guest/Jemaah" as G
+
+rectangle "SIMASJID System" {
+  usecase "Login" as UC1
+  usecase "Kelola Kas Masjid" as UC2
+  usecase "Kelola Donasi/Infaq" as UC3
+  usecase "Kelola Janji Temu" as UC4
+  usecase "Kelola Berita Kegiatan" as UC5
+  usecase "Kelola Pengurus Masjid" as UC6
+  usecase "Kelola Jadwal Ustadz" as UC7
+  usecase "Generate Laporan" as UC8
+  
+  usecase "Lihat Dashboard" as UC9
+  usecase "Lihat Laporan Kas" as UC10
+  usecase "Lihat Laporan Infaq" as UC11
+  usecase "Buat Janji Temu" as UC12
+  usecase "Lihat Berita Kegiatan" as UC13
+  usecase "Lihat Pengurus Masjid" as UC14
+  usecase "Hitung Zakat" as UC15
+  usecase "Lihat Jam Sholat" as UC16
+}
+
+' Admin connections
+A --> UC1
+A --> UC2
+A --> UC3
+A --> UC4
+A --> UC5
+A --> UC6
+A --> UC7
+A --> UC8
+
+' Guest connections
+G --> UC9
+G --> UC10
+G --> UC11
+G --> UC12
+G --> UC13
+G --> UC14
+G --> UC15
+G --> UC16
+
+@enduml
+```
+
+==============================================
+2. ACTIVITY DIAGRAM (dengan Swimlanes)
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Activity Diagram Login
+
+|Admin/User|
+start
+:Akses halaman login;
+:Input email dan password;
+:Klik tombol login;
+
+|System|
+:Tampilkan form login;
+:Validasi input;
+if (Input valid?) then (yes)
+  :Kirim data ke server;
+else (no)
+  :Tampilkan error validation;
+  stop
+endif
+
+|Server|
+:Terima request login;
+:Validasi kredensial dengan database;
+if (Kredensial valid?) then (yes)
+  :Generate session/token;
+  :Kirim response sukses;
+else (no)
+  :Kirim response error;
+endif
+
+|System|
+:Terima response dari server;
+if (Response sukses?) then (yes)
+  :Set session aktif;
+else (no)
+  :Tampilkan pesan error;
+  stop
+endif
+
+|Admin/User|
+if (User adalah Admin?) then (yes)
+  :Dialihkan ke Admin Dashboard;
+else (no)
+  :Dialihkan ke Public Dashboard;
+endif
+stop
+
+@enduml
+```
+
+==============================================
+3. SEQUENCE DIAGRAM
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Sequence Diagram Kelola Kas Masjid
+
+actor Admin
+participant System
+database Database
+
+Admin -> System: akses_menu_kas()
+activate System
+
+System -> Database: get_transaksi_kas()
+activate Database
+Database --> System: return_data_kas()
+deactivate Database
+
+System --> Admin: tampilkan_daftar_kas()
+deactivate System
+
+Admin -> System: pilih_aksi("tambah")
+activate System
+System --> Admin: tampilkan_form()
+deactivate System
+
+Admin -> System: input_data_kas(jenis, jumlah, keterangan)
+activate System
+
+System -> System: validasi_data()
+note right: Validasi format dan\nkelengkapan data
+
+alt Data Valid
+    System -> Database: insert_kas(data)
+    activate Database
+    Database --> System: confirm_insert()
+    deactivate Database
+    
+    System -> Database: update_saldo()
+    activate Database
+    Database --> System: return_saldo_baru()
+    deactivate Database
+    
+    System --> Admin: tampilkan_notifikasi_sukses()
+else Data Invalid
+    System --> Admin: tampilkan_error_validation()
+end
+
+deactivate System
+
+@enduml
+```
+
+==============================================
+4. CLASS DIAGRAM
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Class Diagram
+
+class User {
+  -id: bigint
+  -name: string
+  -email: string
+  -password: string
+  -role: enum(admin,user)
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +login(): boolean
+  +logout(): void
+  +updateProfile(): boolean
+  +checkRole(): string
+}
+
+class LaporanKas {
+  -id: bigint
+  -jenis: enum(masuk,keluar)
+  -keterangan: string
+  -jumlah: decimal
+  -tanggal: date
+  -kategori: string
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +create(): boolean
+  +update(): boolean
+  +delete(): boolean
+  +calculateSaldo(): decimal
+  +getByPeriod(): array
+}
+
+class JanjiTemu {
+  -id: bigint
+  -nama: string
+  -email: string
+  -telepon: string
+  -tanggal: date
+  -waktu: time
+  -keperluan: text
+  -ustadz_id: bigint
+  -status: enum(pending,approved,rejected)
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +book(): boolean
+  +approve(): boolean
+  +reject(): boolean
+  +checkConflict(): boolean
+}
+
+class Ustadz {
+  -id: bigint
+  -name: string
+  -specialization: string
+  -experience: string
+  -schedule_days: json
+  -schedule_start_time: time
+  -schedule_end_time: time
+  -phone: string
+  -email: string
+  -active: boolean
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +checkAvailability(date, time): boolean
+  +getSchedule(): string
+  +getAvailableSlots(): array
+}
+
+class BeritaKegiatan {
+  -id: bigint
+  -judul: string
+  -konten: text
+  -jenis: enum(berita,kegiatan)
+  -status: enum(draft,published)
+  -tanggal_publikasi: date
+  -penulis: string
+  -gambar_url: string
+  -created_at: timestamp
+  -updated_at: timestamp
+  --
+  +publish(): boolean
+  +draft(): boolean
+  +getPublished(): array
+}
+
+' Relationships
+User ||--o{ LaporanKas : "creates"
+Ustadz ||--o{ JanjiTemu : "handles"
+User ||--o{ BeritaKegiatan : "writes"
+
+@enduml
+```
+
+==============================================
+5. FLOWCHART - KELOLA DONASI/INFAQ
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Flowchart Kelola Donasi/Infaq
+
+start
+:Admin Login ke SIMASJID;
+:Pilih Menu Kelola Donasi;
+:Tampilkan Daftar Donasi;
+
+:Pilih Aksi;
+switch (Aksi yang dipilih?)
+case (Lihat Detail)
+  :Tampilkan detail donasi lengkap;
+  :Lihat riwayat donatur;
+  
+case (Update Status)
+  :Pilih donasi untuk update;
+  :Ubah status donasi;
+  if (Konfirmasi status?) then (ya)
+    :Simpan status baru;
+    :Kirim notifikasi ke donatur;
+    note right: Email/SMS konfirmasi\nstatus donasi
+  else (tidak)
+    :Batalkan update;
+  endif
+  
+case (Export Laporan)
+  :Pilih periode dan filter;
+  :Generate laporan donasi;
+  :Download file Excel/PDF;
+  note right: Laporan berisi:\n- Total donasi\n- Detail donatur\n- Grafik periode
+  
+case (Tambah Manual)
+  :Input data donasi manual;
+  :Validasi data input;
+  if (Data valid?) then (ya)
+    :Simpan donasi baru;
+  else (tidak)
+    :Tampilkan error validation;
+  endif
+  
+case (Filter/Cari)
+  :Input kriteria pencarian;
+  :Filter berdasarkan periode/status;
+  :Tampilkan hasil filter;
+endswitch
+
+:Refresh daftar donasi;
+:Tampilkan notifikasi sukses;
+if (Lakukan aksi lain?) then (ya)
+  goto Pilih Aksi
+else (tidak)
+  stop
+endif
+
+@enduml
+```
+
+==============================================
+6. FLOWCHART - BOOKING JANJI TEMU (GUEST)
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Flowchart Booking Janji Temu (Guest)
+
+start
+:Guest akses halaman Janji Temu;
+:Tampilkan form multi-step booking;
+
+partition "Step 1: Data Personal" {
+  :Input data personal\n(Nama, Email, Telepon);
+  :Validasi format data;
+  if (Data personal valid?) then (tidak)
+    :Tampilkan error validation;
+    goto Input data personal
+  else (ya)
+    note right: Data tersimpan\nsementara di session
+  endif
+}
+
+partition "Step 2: Pilih Ustadz" {
+  :Load daftar ustadz aktif;
+  :Tampilkan profile & spesialisasi;
+  if (Ustadz dipilih?) then (tidak)
+    :Pilih ustadz lain;
+    goto Load daftar ustadz aktif
+  else (ya)
+    :Set ustadz_id;
+  endif
+}
+
+partition "Step 3: Pilih Jadwal" {
+  :Load jadwal ustadz terpilih;
+  :Generate available time slots;
+  if (Waktu tersedia?) then (tidak)
+    :Tampilkan "Slot penuh";
+    :Suggest alternatif waktu;
+    goto Load jadwal ustadz terpilih
+  else (ya)
+    :Set tanggal & waktu;
+  endif
+}
+
+partition "Step 4: Detail Keperluan" {
+  :Input keperluan konsultasi;
+  :Validasi minimal karakter;
+  if (Keperluan valid?) then (tidak)
+    :Tampilkan error;
+    goto Input keperluan konsultasi
+  else (ya)
+    note right: Min 20 karakter
+  endif
+}
+
+partition "Review & Submit" {
+  :Tampilkan ringkasan booking;
+  :Show detail lengkap;
+  if (Konfirmasi submit?) then (tidak)
+    :Kembali untuk edit;
+    goto Tampilkan form multi-step booking
+  else (ya)
+    :Validasi final & check conflict;
+    if (No conflict?) then (tidak)
+      :Tampilkan error conflict;
+      :Suggest waktu alternatif;
+      goto Load jadwal ustadz terpilih
+    else (ya)
+      :Simpan janji temu;
+      :Set status = "pending";
+      :Kirim notifikasi ke admin;
+      :Kirim konfirmasi ke guest;
+      :Tampilkan success message;
+    endif
+  endif
+}
+
+stop
+
+@enduml
+```
+==============================================
+7. DATABASE SCHEMA/ERD
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Database Schema (ERD)
+
+entity "users" as users {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(255)
+  * email : varchar(255)
+  * password : varchar(255)
+  * role : enum(admin,user)
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "laporan_kas" as kas {
+  * id : bigint <<PK>>
+  --
+  * jenis : enum(masuk,keluar)
+  * keterangan : varchar(255)
+  * jumlah : decimal(15,2)
+  * tanggal : date
+  * kategori : varchar(100)
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "donations" as donations {
+  * id : bigint <<PK>>
+  --
+  * nama_donatur : varchar(255)
+  * email : varchar(255)
+  * phone : varchar(20)
+  * tanggal : date
+  * kategori : enum(Infaq,Sedekah,Zakat)
+  * jumlah : decimal(15,2)
+  * status : enum(pending,confirmed,rejected)
+  * anonim : boolean
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "janji_temus" as janji {
+  * id : bigint <<PK>>
+  --
+  * nama : varchar(255)
+  * email : varchar(255)
+  * telepon : varchar(20)
+  * tanggal : date
+  * waktu : time
+  * keperluan : text
+  * ustadz_id : bigint <<FK>>
+  * status : enum(pending,approved,rejected)
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "ustadzs" as ustadz {
+  * id : bigint <<PK>>
+  --
+  * name : varchar(255)
+  * specialization : varchar(255)
+  * experience : text
+  * schedule_days : json
+  * schedule_start_time : time
+  * schedule_end_time : time
+  * phone : varchar(20)
+  * email : varchar(255)
+  * active : boolean
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "berita_kegiatan" as berita {
+  * id : bigint <<PK>>
+  --
+  * judul : varchar(255)
+  * konten : text
+  * jenis : enum(berita,kegiatan)
+  * status : enum(draft,published)
+  * tanggal_publikasi : date
+  * penulis : varchar(255)
+  * gambar_url : varchar(500)
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+entity "pengurus_masjid" as pengurus {
+  * id : bigint <<PK>>
+  --
+  * nama : varchar(255)
+  * jabatan : varchar(100)
+  * phone : varchar(20)
+  * email : varchar(255)
+  * foto_url : varchar(500)
+  * deskripsi : text
+  * urutan : integer
+  * active : boolean
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+' Relationships
+ustadz ||--o{ janji : "handles"
+users ||--o{ kas : "manages"
+users ||--o{ berita : "writes"
+
+note top of users : Admin dan User\nuntuk akses sistem
+note top of kas : Catatan keuangan\nmasuk dan keluar
+note top of donations : Donasi dari jemaah\nvia online/offline
+note top of janji : Booking konsultasi\ndengan ustadz
+note top of ustadz : Data ustadz dan\njadwal konsultasi
+note top of berita : Informasi dan\nkegiatan masjid
+note top of pengurus : Struktur organisasi\nmasjid
+
+@enduml
+```
+
+==============================================
+8. UI/UX MOCKUP - ADMIN DASHBOARD WIREFRAME
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Admin Dashboard Wireframe
+
+!define LIGHTBLUE #E3F2FD
+!define LIGHTGREEN #E8F5E8
+!define DARKGREEN #2E7D32
+
+package "Header Section" LIGHTBLUE {
+  [Logo SIMASJID] as logo
+  [Dashboard] as nav1
+  [Kas] as nav2  
+  [Donasi] as nav3
+  [Janji Temu] as nav4
+  [Berita] as nav5
+  [Pengurus] as nav6
+  [User Profile ▼] as profile
+  
+  logo -right- nav1
+  nav1 -right- nav2
+  nav2 -right- nav3
+  nav3 -right- nav4
+  nav4 -right- nav5
+  nav5 -right- nav6
+  nav6 -right- profile
+}
+
+package "Sidebar" LIGHTGREEN {
+  [📊 Dashboard] as sb1
+  [💰 Kelola Kas] as sb2
+  [🎁 Kelola Donasi] as sb3
+  [📅 Kelola Janji Temu] as sb4
+  [📰 Kelola Berita] as sb5
+  [👥 Kelola Pengurus] as sb6
+  [🎓 Kelola Ustadz] as sb7
+  [📈 Laporan] as sb8
+  [⚙️ Settings] as sb9
+  
+  sb1 -down- sb2
+  sb2 -down- sb3
+  sb3 -down- sb4
+  sb4 -down- sb5
+  sb5 -down- sb6
+  sb6 -down- sb7
+  sb7 -down- sb8
+  sb8 -down- sb9
+}
+
+package "Main Content Area" {
+  package "Stats Cards Row" LIGHTGREEN {
+    [Total Kas\nRp 50.000.000] as card1
+    [Donasi Bulan Ini\nRp 15.000.000] as card2
+    [Janji Temu Pending\n12 appointments] as card3
+    [Berita Published\n8 articles] as card4
+    
+    card1 -right- card2
+    card2 -right- card3
+    card3 -right- card4
+  }
+  
+  package "Charts & Lists Section" {
+    package "Left Column" LIGHTBLUE {
+      [Cash Flow Chart\n📈 Line Chart\nTrend 6 bulan] as chart
+    }
+    
+    package "Right Column" LIGHTBLUE {
+      [Janji Temu Hari Ini\n• 09:00 - Ahmad (Pending)\n• 10:30 - Siti (Approved)\n• 14:00 - Budi (Pending)] as appointments
+    }
+    
+    chart -right- appointments
+  }
+  
+  package "Recent Activity Table" LIGHTGREEN {
+    [Aktivitas Terbaru\n┌─────────────┬──────────┬─────────┐\n│ Deskripsi   │ Jumlah   │ Tanggal │\n├─────────────┼──────────┼─────────┤\n│ Infaq Jumaat│ 500.000  │ Hari ini│\n│ Bayar Listrik│ -200.000 │ Kemarin │\n└─────────────┴──────────┴─────────┘] as table
+  }
+}
+
+note top of logo : Navigasi utama dengan\nbrand SIMASJID
+note right of sb1 : Menu admin dengan\nikon dan hierarki
+note bottom of card1 : KPI cards dengan\nwarna hijau islami
+note right of chart : Dashboard analytics\ndengan visualisasi data
+note bottom of table : Recent transactions\ndengan format tabel
+
+@enduml
+```
+
+==============================================
+9. INSTRUKSI PENGGUNAAN PLANTTEXT
+==============================================
+
+**CARA MENGGUNAKAN DI PLANTTEXT.COM:**
+
+1. **Buka** www.planttext.com
+2. **Copy** salah satu kode PlantUML dari file ini
+3. **Paste** ke text editor di PlantText
+4. **Klik** "Generate" atau preview otomatis
+5. **Download** sebagai PNG/SVG jika perlu
+
+**TIPS PLANTTEXT:**
+- Setiap diagram dimulai dengan `@startuml` dan diakhiri `@enduml`
+- Syntax highlighting otomatis tersedia
+- Real-time preview membantu debugging
+- Support export ke berbagai format
+- Bisa share via URL untuk kolaborasi
+
+**KUSTOMISASI WARNA SIMASJID:**
+- Primary Green: `#2E7D32` (tema islami)
+- Secondary Blue: `#1976D2` (teknologi)
+- Light variants untuk background
+- Konsisten di semua diagram
+
+**DIAGRAM YANG TERSEDIA:**
+1. Use Case Diagram - Fungsionalitas sistem
+2. Activity Diagram - Alur login admin
+3. Sequence Diagram - Interaksi kelola kas
+4. Class Diagram - Struktur kelas & relasi
+5. Flowchart Donasi - Proses kelola infaq
+6. Flowchart Booking - Alur janji temu guest
+7. Database Schema ERD - Struktur database
+8. UI Wireframe - Layout admin dashboard
+
+**UNTUK PENGEMBANGAN:**
+- Gunakan diagram class untuk coding
+- Gunakan ERD untuk database migration
+- Gunakan sequence untuk API design
+- Gunakan wireframe untuk UI/UX design 

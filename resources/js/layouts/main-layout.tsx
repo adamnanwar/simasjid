@@ -48,7 +48,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     const navigationItems = [
         { name: 'Home', href: '/', icon: LayoutGrid },
         { name: 'Laporan Kas', href: '/laporan-kas', icon: FileText },
-        { name: 'Laporan Infaq', href: '/laporan-infaq', icon: Heart },
+        { name: 'Zakat Infaq Sedekah', href: '/laporan-infaq', icon: Heart },
         { name: 'Hitung Zakat', href: '/hitung-zakat', icon: Calculator },
         { name: 'Jam Sholat', href: '/jam-sholat', icon: Clock },
         { name: 'Janji Temu', href: '/janji-temu', icon: Calendar },

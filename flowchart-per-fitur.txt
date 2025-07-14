@@ -1,0 +1,215 @@
+FLOWCHART PER FITUR SIMASJID
+============================
+
+1. FLOWCHART LAPORAN KAS
+------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+
+start
+:Akses menu "Laporan Kas";
+:Tampilkan daftar transaksi kas;
+:Admin pilih aksi;
+switch (Aksi?)
+case (Tambah Transaksi)
+  :Input data transaksi kas;
+  :Validasi data;
+  if (Valid?) then (ya)
+    :Simpan ke database;
+    :Update saldo kas;
+  else (tidak)
+    :Tampilkan error;
+  endif
+case (Edit Transaksi)
+  :Pilih transaksi;
+  :Edit data;
+  :Validasi & simpan;
+case (Hapus Transaksi)
+  :Pilih transaksi;
+  :Konfirmasi hapus;
+  :Hapus dari database;
+endswitch
+:Refresh daftar kas;
+stop
+@enduml
+```
+
+2. FLOWCHART LAPORAN INFAQ & SEDEKAH
+------------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+
+start
+:Akses menu "Laporan Infaq & Sedekah";
+:Tampilkan daftar donasi;
+:Admin pilih aksi;
+switch (Aksi?)
+case (Tambah Donasi)
+  :Input data donasi;
+  :Validasi data;
+  if (Valid?) then (ya)
+    :Simpan ke database;
+  else (tidak)
+    :Tampilkan error;
+  endif
+case (Edit Donasi)
+  :Pilih donasi;
+  :Edit data;
+  :Validasi & simpan;
+case (Hapus Donasi)
+  :Pilih donasi;
+  :Konfirmasi hapus;
+  :Hapus dari database;
+endswitch
+:Refresh daftar donasi;
+stop
+@enduml
+```
+
+3. FLOWCHART SIMULASI HITUNG ZAKAT
+----------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+
+start
+:Akses menu "Simulasi Hitung Zakat";
+:Tampilkan form kalkulator zakat;
+:User input data (jenis zakat, jumlah harta, hutang, dsb);
+:Klik tombol "Hitung";
+:Proses perhitungan zakat;
+:Tampilkan hasil simulasi zakat;
+stop
+@enduml
+```
+
+4. FLOWCHART JAM SHOLAT
+-----------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+
+start
+:Akses menu "Jam Sholat";
+:Tampilkan jadwal sholat;
+stop
+@enduml
+```
+
+5. FLOWCHART JANJI TEMU USTADZ
+------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+
+start
+:Akses menu "Janji Temu";
+:Tampilkan form booking janji temu;
+:User input data & pilih ustadz/waktu;
+:Kirim permintaan janji temu;
+:Admin review permintaan;
+if (Disetujui?) then (ya)
+  :Set status approved;
+  :Kirim notifikasi ke user & ustadz;
+else (tidak)
+  :Set status rejected;
+  :Kirim notifikasi penolakan;
+endif
+stop
+@enduml
+```
+
+6. FLOWCHART BERITA & KEGIATAN
+------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+
+start
+:Akses menu "Berita & Kegiatan";
+:Tampilkan daftar berita/kegiatan;
+:Admin pilih aksi;
+switch (Aksi?)
+case (Tambah Berita)
+  :Input data berita/kegiatan;
+  :Upload gambar (opsional);
+  :Simpan ke database;
+case (Edit Berita)
+  :Pilih berita;
+  :Edit data;
+  :Simpan perubahan;
+case (Hapus Berita)
+  :Pilih berita;
+  :Konfirmasi hapus;
+  :Hapus dari database;
+endswitch
+:Refresh daftar berita/kegiatan;
+stop
+@enduml
+```
+
+7. FLOWCHART PENGURUS MASJID
+----------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+skinparam DiamondBackgroundColor white
+skinparam DiamondBorderColor black
+
+start
+:Akses menu "Pengurus Masjid";
+:Tampilkan daftar pengurus;
+:Admin pilih aksi;
+switch (Aksi?)
+case (Tambah Pengurus)
+  :Input data pengurus;
+  :Upload foto (opsional);
+  :Simpan ke database;
+case (Edit Pengurus)
+  :Pilih pengurus;
+  :Edit data;
+  :Simpan perubahan;
+case (Hapus Pengurus)
+  :Pilih pengurus;
+  :Konfirmasi hapus;
+  :Hapus dari database;
+endswitch
+:Refresh daftar pengurus;
+stop
+@enduml
+``` 

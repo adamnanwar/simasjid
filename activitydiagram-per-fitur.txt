@@ -1,0 +1,206 @@
+ACTIVITY DIAGRAM PER FITUR SIMASJID
+===================================
+
+1. ACTIVITY DIAGRAM LAPORAN KAS
+-------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+
+|Admin|
+start
+:Akses Menu Kas;
+
+|System|
+:Tampilkan Data Kas;
+
+|Admin|
+:Pilih Aksi CRUD;
+:Input/Edit Data;
+
+|System|
+:Validasi & Simpan;
+:Update Database;
+stop
+
+@enduml
+```
+
+2. ACTIVITY DIAGRAM LAPORAN INFAQ & SEDEKAH
+-------------------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+
+|Admin|
+start
+:Akses Menu Infaq;
+
+|System|
+:Tampilkan Data Donasi;
+
+|Admin|
+:Pilih Aksi CRUD;
+:Input/Edit Data;
+
+|System|
+:Validasi & Simpan;
+:Update Database;
+stop
+
+@enduml
+```
+
+3. ACTIVITY DIAGRAM SIMULASI HITUNG ZAKAT
+-----------------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+
+|User|
+start
+:Akses Menu Zakat;
+
+|System|
+:Tampilkan Form Kalkulator;
+
+|User|
+:Input Data Zakat;
+:Klik Hitung;
+
+|System|
+:Proses Perhitungan;
+:Tampilkan Hasil;
+stop
+
+@enduml
+```
+
+4. ACTIVITY DIAGRAM JAM SHOLAT
+------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+
+|User|
+start
+:Akses Menu Jam Sholat;
+
+|System|
+:Load Jadwal Sholat;
+:Tampilkan Jadwal;
+stop
+
+@enduml
+```
+
+5. ACTIVITY DIAGRAM JANJI TEMU USTADZ
+-------------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+
+|User|
+start
+:Akses Menu Janji Temu;
+
+|System|
+:Tampilkan Form Booking;
+
+|User|
+:Input Data & Pilih Ustadz;
+:Submit Permintaan;
+
+|System|
+:Simpan Permintaan;
+:Notifikasi Admin;
+
+|Admin|
+:Review Permintaan;
+:Approve/Reject;
+
+|System|
+:Update Status;
+:Kirim Notifikasi;
+stop
+
+@enduml
+```
+
+6. ACTIVITY DIAGRAM BERITA & KEGIATAN
+-------------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+
+|Admin|
+start
+:Akses Menu Berita;
+
+|System|
+:Tampilkan Data Berita;
+
+|Admin|
+:Pilih Aksi CRUD;
+:Input/Edit Data;
+
+|System|
+:Validasi & Simpan;
+:Update Database;
+stop
+
+@enduml
+```
+
+7. ACTIVITY DIAGRAM PENGURUS MASJID
+-----------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor white
+skinparam ActivityBorderColor black
+
+|Admin|
+start
+:Akses Menu Pengurus;
+
+|System|
+:Tampilkan Data Pengurus;
+
+|Admin|
+:Pilih Aksi CRUD;
+:Input/Edit Data;
+
+|System|
+:Validasi & Simpan;
+:Update Database;
+stop
+
+@enduml
+``` 

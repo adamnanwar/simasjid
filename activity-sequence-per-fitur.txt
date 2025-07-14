@@ -1,0 +1,944 @@
+================================================================================
+ACTIVITY DIAGRAMS DAN SEQUENCE DIAGRAMS PER FITUR SIMASJID
+================================================================================
+
+@startuml
+title Activity Diagram - Kelola Jadwal Sholat
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+skinparam note {
+    BackgroundColor #FEF3C7
+    BorderColor #D97706
+}
+
+start
+:Admin Login ke System;
+:Pilih Menu Jadwal Sholat;
+:Tampilkan Jadwal Sholat Saat Ini;
+if (Update Jadwal?) then (ya)
+    :Input Waktu Sholat Baru;
+    :Validasi Format Waktu;
+    if (Valid?) then (ya)
+        :Simpan Jadwal ke Database;
+        :Tampilkan Notifikasi Berhasil;
+        :Update Tampilan Jadwal;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (tidak)
+    :Lihat Jadwal Saja;
+endif
+:Kembali ke Menu Utama;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola Jadwal Sholat
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor Admin
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "Model" as MDL
+participant "Database" as DB
+
+Admin -> UI: Akses Menu Jadwal Sholat
+UI -> CTL: GET /admin/jadwal-sholat
+CTL -> MDL: getJadwalSholat()
+MDL -> DB: SELECT * FROM jadwal_sholat
+DB --> MDL: return jadwal data
+MDL --> CTL: return jadwal
+CTL --> UI: return view with data
+UI --> Admin: Tampilkan Jadwal Sholat
+
+Admin -> UI: Update Jadwal Sholat
+UI -> CTL: POST /admin/jadwal-sholat/update
+CTL -> CTL: validate input
+alt validation success
+    CTL -> MDL: updateJadwalSholat(data)
+    MDL -> DB: UPDATE jadwal_sholat SET ...
+    DB --> MDL: return success
+    MDL --> CTL: return success
+    CTL --> UI: return success response
+    UI --> Admin: Tampilkan Notifikasi Berhasil
+else validation failed
+    CTL --> UI: return error response
+    UI --> Admin: Tampilkan Pesan Error
+end
+@enduml
+
+@startuml
+title Activity Diagram - Kelola Infaq
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+
+start
+:User Akses Menu Infaq;
+:Tampilkan Form Infaq;
+:Input Jumlah Infaq;
+:Input Nama Pemberi (Opsional);
+:Pilih Metode Pembayaran;
+if (Metode Pembayaran?) then (QRIS)
+    :Tampilkan QR Code;
+    :Scan QR Code;
+    :Proses Pembayaran;
+    if (Pembayaran Berhasil?) then (ya)
+        :Simpan Data Infaq;
+        :Generate Bukti Transaksi;
+        :Kirim Notifikasi;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (Cash)
+    :Catat Pembayaran Manual;
+    :Simpan Data Infaq;
+    :Generate Bukti Transaksi;
+endif
+:Tampilkan Konfirmasi;
+:Kembali ke Menu Utama;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola Infaq
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor User
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "Payment Gateway" as PG
+participant "Model" as MDL
+participant "Database" as DB
+
+User -> UI: Akses Menu Infaq
+UI -> CTL: GET /infaq
+CTL --> UI: return infaq form
+UI --> User: Tampilkan Form Infaq
+
+User -> UI: Submit Infaq (jumlah, nama, metode)
+UI -> CTL: POST /infaq/submit
+CTL -> CTL: validate input
+alt metode QRIS
+    CTL -> PG: generate QR code
+    PG --> CTL: return QR code
+    CTL --> UI: return QR code
+    UI --> User: Tampilkan QR Code
+    User -> PG: Scan & Pay
+    PG -> CTL: payment callback
+    CTL -> MDL: saveInfaq(data)
+    MDL -> DB: INSERT INTO donations
+    DB --> MDL: return success
+    MDL --> CTL: return success
+    CTL --> UI: return success
+    UI --> User: Tampilkan Konfirmasi
+else metode Cash
+    CTL -> MDL: saveInfaq(data)
+    MDL -> DB: INSERT INTO donations
+    DB --> MDL: return success
+    MDL --> CTL: return success
+    CTL --> UI: return success
+    UI --> User: Tampilkan Konfirmasi
+end
+@enduml
+
+@startuml
+title Activity Diagram - Kelola Zakat
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+
+start
+:User Akses Menu Zakat;
+:Pilih Jenis Zakat;
+if (Jenis Zakat?) then (Hitung Zakat)
+    :Input Data Perhitungan;
+    :Hitung Zakat Otomatis;
+    :Tampilkan Hasil Perhitungan;
+    if (Bayar Zakat?) then (ya)
+        :Lanjut ke Proses Pembayaran;
+        :Pilih Metode Pembayaran;
+        :Proses Pembayaran;
+        :Simpan Data Zakat;
+        :Generate Bukti Pembayaran;
+    else (tidak)
+        :Simpan Hasil Perhitungan;
+    endif
+else (Bayar Zakat)
+    :Input Jumlah Zakat;
+    :Input Data Pembayar;
+    :Pilih Metode Pembayaran;
+    :Proses Pembayaran;
+    :Simpan Data Zakat;
+    :Generate Bukti Pembayaran;
+endif
+:Tampilkan Konfirmasi;
+:Kembali ke Menu Utama;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola Zakat
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor User
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "Zakat Calculator" as ZC
+participant "Payment Gateway" as PG
+participant "Model" as MDL
+participant "Database" as DB
+
+User -> UI: Akses Menu Zakat
+UI -> CTL: GET /zakat
+CTL --> UI: return zakat form
+UI --> User: Tampilkan Form Zakat
+
+User -> UI: Input Data Perhitungan
+UI -> CTL: POST /zakat/calculate
+CTL -> ZC: calculate(data)
+ZC --> CTL: return calculation result
+CTL --> UI: return calculation
+UI --> User: Tampilkan Hasil Perhitungan
+
+User -> UI: Bayar Zakat
+UI -> CTL: POST /zakat/pay
+CTL -> PG: generate payment
+PG --> CTL: return payment info
+CTL --> UI: return payment info
+UI --> User: Tampilkan Info Pembayaran
+
+User -> PG: Proses Pembayaran
+PG -> CTL: payment callback
+CTL -> MDL: saveZakat(data)
+MDL -> DB: INSERT INTO donations (type='zakat')
+DB --> MDL: return success
+MDL --> CTL: return success
+CTL --> UI: return success
+UI --> User: Tampilkan Bukti Pembayaran
+@enduml
+
+@startuml
+title Activity Diagram - Kelola Kegiatan
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+
+start
+:Admin Login ke System;
+:Pilih Menu Kelola Kegiatan;
+if (Aksi?) then (Tambah Kegiatan)
+    :Input Data Kegiatan;
+    :Input Tanggal & Waktu;
+    :Input Deskripsi;
+    :Upload Gambar (Opsional);
+    :Validasi Data;
+    if (Valid?) then (ya)
+        :Simpan ke Database;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (Edit Kegiatan)
+    :Pilih Kegiatan;
+    :Tampilkan Form Edit;
+    :Update Data Kegiatan;
+    :Validasi Data;
+    if (Valid?) then (ya)
+        :Update Database;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (Hapus Kegiatan)
+    :Pilih Kegiatan;
+    :Konfirmasi Penghapusan;
+    if (Konfirmasi?) then (ya)
+        :Hapus dari Database;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Batal Hapus;
+    endif
+endif
+:Kembali ke Daftar Kegiatan;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola Kegiatan
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor Admin
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "File Storage" as FS
+participant "Model" as MDL
+participant "Database" as DB
+
+Admin -> UI: Akses Menu Kelola Kegiatan
+UI -> CTL: GET /admin/kegiatan
+CTL -> MDL: getAllKegiatan()
+MDL -> DB: SELECT * FROM kegiatan_mendatang
+DB --> MDL: return kegiatan data
+MDL --> CTL: return kegiatan
+CTL --> UI: return view with data
+UI --> Admin: Tampilkan Daftar Kegiatan
+
+Admin -> UI: Tambah Kegiatan Baru
+UI -> CTL: POST /admin/kegiatan/create
+CTL -> CTL: validate input
+alt validation success
+    alt ada upload gambar
+        CTL -> FS: upload image
+        FS --> CTL: return file path
+    end
+    CTL -> MDL: createKegiatan(data)
+    MDL -> DB: INSERT INTO kegiatan_mendatang
+    DB --> MDL: return success
+    MDL --> CTL: return success
+    CTL --> UI: return success response
+    UI --> Admin: Tampilkan Notifikasi Berhasil
+else validation failed
+    CTL --> UI: return error response
+    UI --> Admin: Tampilkan Pesan Error
+end
+@enduml
+
+@startuml
+title Activity Diagram - Kelola Janji Temu Ustadz
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+
+start
+:User Akses Menu Janji Temu;
+:Pilih Ustadz;
+:Tampilkan Jadwal Tersedia;
+:Pilih Tanggal & Waktu;
+:Input Keperluan;
+:Input Data Kontak;
+:Validasi Data;
+if (Valid?) then (ya)
+    :Simpan Booking ke Database;
+    :Kirim Notifikasi ke Ustadz;
+    :Tampilkan Konfirmasi Booking;
+    note right: Status: Pending
+    
+    partition "Proses Approval Admin" {
+        :Admin Review Booking;
+        if (Keputusan Admin?) then (Approve)
+            :Update Status ke Approved;
+            :Kirim Notifikasi ke User;
+            :Kirim Notifikasi ke Ustadz;
+        else (Reject)
+            :Update Status ke Rejected;
+            :Kirim Notifikasi ke User;
+            :Input Alasan Penolakan;
+        endif
+    }
+    
+else (tidak)
+    :Tampilkan Pesan Error;
+endif
+:Kembali ke Menu Utama;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola Janji Temu Ustadz
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor User
+actor Admin
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "Notification Service" as NS
+participant "Model" as MDL
+participant "Database" as DB
+
+User -> UI: Akses Menu Janji Temu
+UI -> CTL: GET /janji-temu
+CTL -> MDL: getUstadzList()
+MDL -> DB: SELECT * FROM ustadzs
+DB --> MDL: return ustadz data
+MDL --> CTL: return ustadz
+CTL --> UI: return view with data
+UI --> User: Tampilkan Daftar Ustadz
+
+User -> UI: Pilih Ustadz & Jadwal
+UI -> CTL: GET /janji-temu/ustadz/{id}/schedule
+CTL -> MDL: getUstadzSchedule(id)
+MDL -> DB: SELECT schedule FROM ustadzs WHERE id=?
+DB --> MDL: return schedule
+MDL --> CTL: return schedule
+CTL --> UI: return schedule
+UI --> User: Tampilkan Jadwal Tersedia
+
+User -> UI: Submit Booking
+UI -> CTL: POST /janji-temu/book
+CTL -> CTL: validate input
+alt validation success
+    CTL -> MDL: createBooking(data)
+    MDL -> DB: INSERT INTO janji_temus
+    DB --> MDL: return booking id
+    MDL --> CTL: return booking id
+    CTL -> NS: send notification to admin
+    NS -> Admin: Notifikasi Booking Baru
+    CTL --> UI: return success
+    UI --> User: Tampilkan Konfirmasi Booking
+else validation failed
+    CTL --> UI: return error
+    UI --> User: Tampilkan Pesan Error
+end
+
+Admin -> UI: Review Booking
+UI -> CTL: GET /admin/janji-temu
+CTL -> MDL: getPendingBookings()
+MDL -> DB: SELECT * FROM janji_temus WHERE status='pending'
+DB --> MDL: return bookings
+MDL --> CTL: return bookings
+CTL --> UI: return view with bookings
+UI --> Admin: Tampilkan Daftar Booking
+
+Admin -> UI: Approve/Reject Booking
+UI -> CTL: POST /admin/janji-temu/{id}/approve
+CTL -> MDL: updateBookingStatus(id, status)
+MDL -> DB: UPDATE janji_temus SET status=? WHERE id=?
+DB --> MDL: return success
+MDL --> CTL: return success
+CTL -> NS: send notification to user
+NS -> User: Notifikasi Status Booking
+CTL --> UI: return success
+UI --> Admin: Tampilkan Notifikasi Berhasil
+@enduml
+
+@startuml
+title Activity Diagram - Kelola Kas Masjid
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+
+start
+:Admin Login ke System;
+:Pilih Menu Kas Masjid;
+if (Aksi?) then (Tambah Transaksi)
+    :Pilih Jenis Transaksi;
+    if (Jenis?) then (Pemasukan)
+        :Input Sumber Dana;
+        :Input Jumlah;
+        :Input Deskripsi;
+        :Input Tanggal;
+    else (Pengeluaran)
+        :Input Tujuan Pengeluaran;
+        :Input Jumlah;
+        :Input Deskripsi;
+        :Input Tanggal;
+    endif
+    :Validasi Data;
+    if (Valid?) then (ya)
+        :Simpan ke Database;
+        :Update Saldo Kas;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (Lihat Laporan)
+    :Pilih Periode Laporan;
+    :Generate Laporan Kas;
+    :Tampilkan Laporan;
+    :Hitung Total Saldo;
+endif
+:Kembali ke Menu Utama;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola Kas Masjid
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor Admin
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "Model" as MDL
+participant "Database" as DB
+
+Admin -> UI: Akses Menu Kas Masjid
+UI -> CTL: GET /admin/kas
+CTL -> MDL: getKasData()
+MDL -> DB: SELECT * FROM laporan_kas ORDER BY tanggal DESC
+DB --> MDL: return kas data
+MDL --> CTL: return kas data
+CTL --> UI: return view with data
+UI --> Admin: Tampilkan Data Kas
+
+Admin -> UI: Tambah Transaksi Baru
+UI -> CTL: POST /admin/kas/create
+CTL -> CTL: validate input
+alt validation success
+    CTL -> MDL: createTransaksi(data)
+    MDL -> DB: INSERT INTO laporan_kas
+    DB --> MDL: return transaction id
+    MDL -> DB: UPDATE saldo_kas
+    DB --> MDL: return success
+    MDL --> CTL: return success
+    CTL --> UI: return success response
+    UI --> Admin: Tampilkan Notifikasi Berhasil
+else validation failed
+    CTL --> UI: return error response
+    UI --> Admin: Tampilkan Pesan Error
+end
+
+Admin -> UI: Generate Laporan
+UI -> CTL: GET /admin/kas/report
+CTL -> MDL: generateReport(period)
+MDL -> DB: SELECT * FROM laporan_kas WHERE tanggal BETWEEN ? AND ?
+DB --> MDL: return transactions
+MDL -> MDL: calculate totals
+MDL --> CTL: return report data
+CTL --> UI: return report view
+UI --> Admin: Tampilkan Laporan Kas
+@enduml
+
+@startuml
+title Activity Diagram - Kelola Pengumuman
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+
+start
+:Admin Login ke System;
+:Pilih Menu Pengumuman;
+if (Aksi?) then (Tambah Pengumuman)
+    :Input Judul Pengumuman;
+    :Input Isi Pengumuman;
+    :Pilih Kategori;
+    :Set Tanggal Publish;
+    :Upload Gambar (Opsional);
+    :Validasi Data;
+    if (Valid?) then (ya)
+        :Simpan ke Database;
+        :Publish Pengumuman;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (Edit Pengumuman)
+    :Pilih Pengumuman;
+    :Tampilkan Form Edit;
+    :Update Data Pengumuman;
+    :Validasi Data;
+    if (Valid?) then (ya)
+        :Update Database;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (Hapus Pengumuman)
+    :Pilih Pengumuman;
+    :Konfirmasi Penghapusan;
+    if (Konfirmasi?) then (ya)
+        :Hapus dari Database;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Batal Hapus;
+    endif
+endif
+:Kembali ke Daftar Pengumuman;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola Pengumuman
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor Admin
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "File Storage" as FS
+participant "Model" as MDL
+participant "Database" as DB
+
+Admin -> UI: Akses Menu Pengumuman
+UI -> CTL: GET /admin/pengumuman
+CTL -> MDL: getAllPengumuman()
+MDL -> DB: SELECT * FROM berita_kegiatan ORDER BY created_at DESC
+DB --> MDL: return pengumuman data
+MDL --> CTL: return pengumuman
+CTL --> UI: return view with data
+UI --> Admin: Tampilkan Daftar Pengumuman
+
+Admin -> UI: Tambah Pengumuman Baru
+UI -> CTL: POST /admin/pengumuman/create
+CTL -> CTL: validate input
+alt validation success
+    alt ada upload gambar
+        CTL -> FS: upload image
+        FS --> CTL: return file path
+    end
+    CTL -> MDL: createPengumuman(data)
+    MDL -> DB: INSERT INTO berita_kegiatan
+    DB --> MDL: return pengumuman id
+    MDL --> CTL: return success
+    CTL --> UI: return success response
+    UI --> Admin: Tampilkan Notifikasi Berhasil
+else validation failed
+    CTL --> UI: return error response
+    UI --> Admin: Tampilkan Pesan Error
+end
+
+Admin -> UI: Edit Pengumuman
+UI -> CTL: GET /admin/pengumuman/{id}/edit
+CTL -> MDL: getPengumuman(id)
+MDL -> DB: SELECT * FROM berita_kegiatan WHERE id=?
+DB --> MDL: return pengumuman data
+MDL --> CTL: return pengumuman
+CTL --> UI: return edit form
+UI --> Admin: Tampilkan Form Edit
+
+Admin -> UI: Update Pengumuman
+UI -> CTL: POST /admin/pengumuman/{id}/update
+CTL -> CTL: validate input
+alt validation success
+    CTL -> MDL: updatePengumuman(id, data)
+    MDL -> DB: UPDATE berita_kegiatan SET ... WHERE id=?
+    DB --> MDL: return success
+    MDL --> CTL: return success
+    CTL --> UI: return success response
+    UI --> Admin: Tampilkan Notifikasi Berhasil
+else validation failed
+    CTL --> UI: return error response
+    UI --> Admin: Tampilkan Pesan Error
+end
+@enduml
+
+@startuml
+title Activity Diagram - Kelola User
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+
+start
+:Admin Login ke System;
+:Pilih Menu Kelola User;
+if (Aksi?) then (Tambah User)
+    :Input Data User;
+    :Input Username;
+    :Input Email;
+    :Input Password;
+    :Pilih Role;
+    :Validasi Data;
+    if (Valid?) then (ya)
+        :Hash Password;
+        :Simpan ke Database;
+        :Kirim Email Aktivasi;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (Edit User)
+    :Pilih User;
+    :Tampilkan Form Edit;
+    :Update Data User;
+    :Validasi Data;
+    if (Valid?) then (ya)
+        :Update Database;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Tampilkan Pesan Error;
+    endif
+else (Hapus User)
+    :Pilih User;
+    :Konfirmasi Penghapusan;
+    if (Konfirmasi?) then (ya)
+        :Hapus dari Database;
+        :Tampilkan Notifikasi Berhasil;
+    else (tidak)
+        :Batal Hapus;
+    endif
+else (Reset Password)
+    :Pilih User;
+    :Generate Password Baru;
+    :Hash Password;
+    :Update Database;
+    :Kirim Email Password Baru;
+    :Tampilkan Notifikasi Berhasil;
+endif
+:Kembali ke Daftar User;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola User
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor Admin
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "Email Service" as ES
+participant "Model" as MDL
+participant "Database" as DB
+
+Admin -> UI: Akses Menu Kelola User
+UI -> CTL: GET /admin/users
+CTL -> MDL: getAllUsers()
+MDL -> DB: SELECT * FROM users ORDER BY created_at DESC
+DB --> MDL: return users data
+MDL --> CTL: return users
+CTL --> UI: return view with data
+UI --> Admin: Tampilkan Daftar User
+
+Admin -> UI: Tambah User Baru
+UI -> CTL: POST /admin/users/create
+CTL -> CTL: validate input
+alt validation success
+    CTL -> CTL: hash password
+    CTL -> MDL: createUser(data)
+    MDL -> DB: INSERT INTO users
+    DB --> MDL: return user id
+    MDL --> CTL: return success
+    CTL -> ES: send activation email
+    ES --> CTL: email sent
+    CTL --> UI: return success response
+    UI --> Admin: Tampilkan Notifikasi Berhasil
+else validation failed
+    CTL --> UI: return error response
+    UI --> Admin: Tampilkan Pesan Error
+end
+
+Admin -> UI: Reset Password User
+UI -> CTL: POST /admin/users/{id}/reset-password
+CTL -> CTL: generate new password
+CTL -> CTL: hash password
+CTL -> MDL: updateUserPassword(id, hashedPassword)
+MDL -> DB: UPDATE users SET password=? WHERE id=?
+DB --> MDL: return success
+MDL --> CTL: return success
+CTL -> ES: send new password email
+ES --> CTL: email sent
+CTL --> UI: return success response
+UI --> Admin: Tampilkan Notifikasi Berhasil
+@enduml
+
+@startuml
+title Activity Diagram - Kelola Laporan
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #1E40AF
+    FontColor #1E40AF
+}
+skinparam activityArrow {
+    Color #1E40AF
+}
+
+start
+:Admin Login ke System;
+:Pilih Menu Laporan;
+:Pilih Jenis Laporan;
+if (Jenis Laporan?) then (Laporan Kas)
+    :Pilih Periode Laporan;
+    :Generate Laporan Kas;
+    :Tampilkan Summary Kas;
+    :Tampilkan Detail Transaksi;
+else (Laporan Donasi)
+    :Pilih Periode Laporan;
+    :Generate Laporan Donasi;
+    :Tampilkan Summary Donasi;
+    :Tampilkan Detail Infaq & Zakat;
+else (Laporan Kegiatan)
+    :Pilih Periode Laporan;
+    :Generate Laporan Kegiatan;
+    :Tampilkan Daftar Kegiatan;
+    :Tampilkan Statistik Kegiatan;
+else (Laporan Janji Temu)
+    :Pilih Periode Laporan;
+    :Generate Laporan Janji Temu;
+    :Tampilkan Statistik Booking;
+    :Tampilkan Detail Janji Temu;
+endif
+if (Export Laporan?) then (ya)
+    :Pilih Format Export;
+    if (Format?) then (PDF)
+        :Generate PDF Report;
+        :Download PDF;
+    else (Excel)
+        :Generate Excel Report;
+        :Download Excel;
+    endif
+else (tidak)
+    :Tampilkan Laporan di Browser;
+endif
+:Kembali ke Menu Laporan;
+stop
+@enduml
+
+@startuml
+title Sequence Diagram - Kelola Laporan
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+    ArrowColor #1E40AF
+    LifeLineBorderColor #1E40AF
+    LifeLineBackgroundColor #E8F4FD
+    ParticipantBorderColor #1E40AF
+    ParticipantBackgroundColor #E8F4FD
+    ParticipantFontColor #1E40AF
+}
+
+actor Admin
+participant "Web Interface" as UI
+participant "Controller" as CTL
+participant "Report Generator" as RG
+participant "Model" as MDL
+participant "Database" as DB
+
+Admin -> UI: Akses Menu Laporan
+UI -> CTL: GET /admin/laporan
+CTL --> UI: return laporan menu
+UI --> Admin: Tampilkan Menu Laporan
+
+Admin -> UI: Pilih Jenis Laporan
+UI -> CTL: GET /admin/laporan/{type}
+CTL --> UI: return form periode
+UI --> Admin: Tampilkan Form Periode
+
+Admin -> UI: Generate Laporan
+UI -> CTL: POST /admin/laporan/{type}/generate
+CTL -> MDL: getDataByPeriod(type, startDate, endDate)
+MDL -> DB: SELECT * FROM {table} WHERE tanggal BETWEEN ? AND ?
+DB --> MDL: return data
+MDL --> CTL: return data
+CTL -> RG: generateReport(type, data)
+RG -> RG: process data
+RG -> RG: calculate statistics
+RG --> CTL: return report
+CTL --> UI: return report view
+UI --> Admin: Tampilkan Laporan
+
+Admin -> UI: Export Laporan
+UI -> CTL: POST /admin/laporan/{type}/export
+CTL -> RG: exportReport(type, format, data)
+alt format PDF
+    RG -> RG: generate PDF
+    RG --> CTL: return PDF file
+    CTL --> UI: return PDF download
+    UI --> Admin: Download PDF
+else format Excel
+    RG -> RG: generate Excel
+    RG --> CTL: return Excel file
+    CTL --> UI: return Excel download
+    UI --> Admin: Download Excel
+end
+@enduml 

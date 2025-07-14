@@ -1,0 +1,42 @@
+CAPTIONS UNTUK DIAGRAM SIMASJID
+==============================================
+
+1. USE CASE DIAGRAM KESELURUHAN
+------------------------------
+Gambar 4.1 Use Case Diagram Sistem Informasi Manajemen Masjid (SIMASJID)
+Diagram ini menggambarkan interaksi antara aktor (Admin, Guest/Jemaah, dan Ustadz) dengan berbagai fitur yang tersedia dalam sistem SIMASJID. Setiap aktor memiliki hak akses yang berbeda terhadap fitur-fitur tersebut sesuai dengan perannya masing-masing.
+
+2. ACTIVITY DIAGRAM - LOGIN & AUTHENTICATION
+-----------------------------------------
+Gambar 4.2 Activity Diagram Proses Login dan Autentikasi SIMASJID
+Diagram ini menjelaskan alur aktivitas proses login dan autentikasi pengguna dalam sistem SIMASJID, mulai dari input kredensial hingga validasi dan penanganan berbagai skenario login (berhasil/gagal).
+
+3. SEQUENCE DIAGRAM - KELOLA KAS MASJID
+-------------------------------------
+Gambar 4.3 Sequence Diagram Pengelolaan Kas Masjid
+Diagram ini menunjukkan urutan interaksi antara objek-objek dalam proses pengelolaan kas masjid, termasuk alur komunikasi antara Admin, antarmuka web, controller, model, dan database.
+
+4. FLOWCHART - PROSES KELOLA KAS MASJID
+-------------------------------------
+Gambar 4.4 Flowchart Proses Pengelolaan Kas Masjid
+Diagram ini menggambarkan alur proses pengelolaan kas masjid secara detail, termasuk berbagai operasi yang dapat dilakukan seperti penambahan, pengeditan, dan penghapusan transaksi kas, serta pembuatan laporan.
+
+5. USE CASE DIAGRAM - KELOLA DONASI
+---------------------------------
+Gambar 4.5 Use Case Diagram Pengelolaan Donasi
+Diagram ini menunjukkan interaksi antara Admin dan Guest/Donatur dengan fitur-fitur yang tersedia dalam modul pengelolaan donasi SIMASJID.
+
+6. ACTIVITY DIAGRAM - PROSES DONASI ONLINE
+---------------------------------------
+Gambar 4.6 Activity Diagram Proses Donasi Online
+Diagram ini menjelaskan alur aktivitas proses donasi online dari perspektif donatur, sistem, dan admin, termasuk pemilihan metode pembayaran, verifikasi, dan konfirmasi donasi.
+
+7. SEQUENCE DIAGRAM - BOOKING JANJI TEMU
+-------------------------------------
+Gambar 4.7 Sequence Diagram Proses Booking Janji Temu
+Diagram ini menggambarkan urutan interaksi antara komponen sistem dalam proses pembuatan janji temu, mulai dari pemilihan ustadz dan jadwal hingga konfirmasi booking.
+
+8. FLOWCHART - APPROVAL JANJI TEMU (ADMIN)
+---------------------------------------
+Gambar 4.8 Flowchart Proses Approval Janji Temu oleh Admin
+Diagram ini menjelaskan alur proses persetujuan janji temu dari sisi admin, termasuk review permintaan, pengambilan keputusan, dan tindak lanjut yang diperlukan. 

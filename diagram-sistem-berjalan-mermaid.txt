@@ -1,0 +1,235 @@
+DIAGRAM SISTEM BERJALAN (MERMAID FORMAT)
+=====================================
+
+1. PENGELOLAAN KAS MASJID
+-------------------------------------
+```mermaid
+flowchart TD
+    %% Actors
+    subgraph Bendahara
+        A1[Terima uang/nota pengeluaran]
+        A2[Hitung jumlah manual]
+        A3[Catat di buku kas harian]
+        A7[Simpan bukti transaksi]
+        A8[Input ke Excel bulanan]
+        A9[Hitung total manual]
+        A10[Buat laporan bulanan]
+    end
+
+    subgraph DKM
+        B1[Verifikasi catatan]
+        B2{Data valid?}
+        B3[Minta koreksi]
+        B4[Diskusi dengan bendahara]
+        B5[Tanda tangan verifikasi]
+        B6[Review laporan]
+        B7{Laporan OK?}
+        B8[Revisi laporan]
+        B9[Tanda tangan laporan]
+        B10[Arsipkan laporan]
+    end
+
+    %% Flow
+    A1 --> A2
+    A2 --> A3
+    A3 --> B1
+    B1 --> B2
+    B2 -->|Tidak| B3
+    B3 --> B4
+    B4 --> A3
+    B2 -->|Ya| B5
+    B5 --> A7
+    A7 --> A8
+    A8 --> A9
+    A9 --> A10
+    A10 --> B6
+    B6 --> B7
+    B7 -->|Tidak| B8
+    B8 --> A10
+    B7 -->|Ya| B9
+    B9 --> B10
+```
+
+2. PENGELOLAAN DONASI
+-------------------------------------
+```mermaid
+flowchart TD
+    %% Actors
+    subgraph Donatur
+        A1[Datang ke masjid]
+        A2[Serahkan donasi]
+    end
+
+    subgraph Petugas
+        B1[Hitung donasi]
+        B2[Catat di buku donasi]
+        B3[Buat kwitansi manual]
+        B4[Simpan uang di brankas]
+    end
+
+    subgraph Bendahara
+        C1[Rekap donasi harian]
+        C2[Input ke buku besar]
+        C3[Buat laporan mingguan]
+    end
+
+    subgraph DKM
+        D1[Review laporan]
+        D2[Update papan informasi]
+        D3[Arsipkan dokumentasi]
+    end
+
+    %% Flow
+    A1 --> A2
+    A2 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> B4
+    B4 --> C1
+    C1 --> C2
+    C2 --> C3
+    C3 --> D1
+    D1 --> D2
+    D2 --> D3
+```
+
+3. PENJADWALAN KEGIATAN
+-------------------------------------
+```mermaid
+flowchart TD
+    %% Actors
+    subgraph Koordinator
+        A1[Buat rencana kegiatan]
+        A2[Hubungi ustadz via telepon]
+        A5[Catat di kalender]
+        A6[Update papan pengumuman]
+        A7[Informasi ke pengurus]
+    end
+
+    subgraph Ustadz
+        B1[Konfirmasi ketersediaan]
+        B2{Bisa hadir?}
+        B3[Informasi tidak bisa hadir]
+        B4[Usulkan jadwal alternatif]
+        B5[Konfirmasi jadwal]
+    end
+
+    subgraph Pengurus
+        C1[Siapkan kebutuhan acara]
+        C2[Dokumentasi kegiatan]
+        C3[Catat di buku kegiatan]
+    end
+
+    %% Flow
+    A1 --> A2
+    A2 --> B1
+    B1 --> B2
+    B2 -->|Tidak| B3
+    B3 --> B4
+    B4 --> A1
+    B2 -->|Ya| B5
+    B5 --> A5
+    A5 --> A6
+    A6 --> A7
+    A7 --> C1
+    C1 --> C2
+    C2 --> C3
+```
+
+4. MANAJEMEN PENGURUS
+-------------------------------------
+```mermaid
+flowchart TD
+    %% Actors
+    subgraph KetuaDKM[Ketua DKM]
+        A1[Terima lamaran]
+        A2[Review berkas]
+        A5[Buat SK manual]
+        A6[Tanda tangan SK]
+        A7[Informasi penolakan]
+    end
+
+    subgraph Sekretaris
+        B1[Arsip berkas fisik]
+        B2[Input data ke Excel]
+        B3[Copy SK]
+        B4[Arsip SK]
+        B5[Update data pengurus]
+    end
+
+    subgraph PengurusBaru[Pengurus Baru]
+        C1[Terima SK]
+        C2[Mulai bertugas]
+        C3[Isi buku presensi]
+    end
+
+    %% Decision
+    D1{Diterima?}
+
+    %% Flow
+    A1 --> A2
+    A2 --> B1
+    B1 --> B2
+    B2 --> D1
+    D1 -->|Ya| A5
+    A5 --> A6
+    A6 --> B3
+    B3 --> B4
+    B4 --> B5
+    B5 --> C1
+    C1 --> C2
+    C2 --> C3
+    D1 -->|Tidak| A7
+```
+
+5. PELAPORAN DAN DOKUMENTASI
+-------------------------------------
+```mermaid
+flowchart TD
+    %% Actors
+    subgraph Sekretaris
+        A1[Kumpulkan buku-buku]
+        A2[Kumpulkan nota/kwitansi]
+        A3[Input data ke Excel]
+        A7[Print laporan]
+        A8[Siapkan lampiran]
+        A12[Copy laporan]
+        A13[Arsip di ordner]
+        A14[Simpan scan di PC]
+    end
+
+    subgraph Bendahara
+        B1[Verifikasi data keuangan]
+        B2[Sesuaikan dengan bukti]
+        B3{Data sesuai?}
+        B4[Koreksi data]
+        B5[Tanda tangan verifikasi]
+    end
+
+    subgraph KetuaDKM[Ketua DKM]
+        C1[Review laporan]
+        C2{Laporan OK?}
+        C3[Minta revisi]
+        C4[Tanda tangan]
+    end
+
+    %% Flow
+    A1 --> A2
+    A2 --> A3
+    A3 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 -->|Tidak| B4
+    B4 --> A3
+    B3 -->|Ya| B5
+    B5 --> A7
+    A7 --> A8
+    A8 --> C1
+    C1 --> C2
+    C2 -->|Tidak| C3
+    C3 --> A7
+    C2 -->|Ya| C4
+    C4 --> A12
+    A12 --> A13
+    A13 --> A14
+``` 

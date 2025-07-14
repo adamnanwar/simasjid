@@ -65,10 +65,16 @@ export default function AdminLayout({ children, title = 'Admin Dashboard' }: Adm
             current: window.location.pathname === '/admin/keuangan',
             children: [
                 {
-                    name: 'Donasi/Infaq',
+                    name: 'Zakat Infaq Sedekah',
                     href: '/admin/keuangan/donasi',
                     icon: Banknote,
                     current: window.location.pathname === '/admin/keuangan/donasi'
+                },
+                {
+                    name: 'Kelola Zakat',
+                    href: '/admin/keuangan/zakat',
+                    icon: TrendingUp,
+                    current: window.location.pathname === '/admin/keuangan/zakat'
                 },
                 {
                     name: 'Kas Masjid',

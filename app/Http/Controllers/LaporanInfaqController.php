@@ -219,14 +219,14 @@ class LaporanInfaqController extends Controller
         $donation = Donation::create([
             'nama_donatur' => $nama_donatur,
             'email' => $email,
-            'phone' => $phone,
+            'phone' => $request->phone,
             'tanggal' => $request->tanggal,
             'kategori' => $request->kategori,
             'program' => $request->program,
             'jumlah' => $request->jumlah,
             'metode' => $request->metode,
-            'status' => 'pending',
             'anonim' => $request->boolean('anonim'),
+            'status' => 'confirmed', // Auto-confirm all donations
             'description' => $request->description
         ]);
 
@@ -276,6 +276,17 @@ class LaporanInfaqController extends Controller
             'anonim' => $request->boolean('anonim'),
             'description' => $request->description
         ]);
+
+        // Return JSON for API calls, redirect for web requests
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Donasi berhasil diperbarui',
+                'data' => $donation
+            ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+              ->header('Pragma', 'no-cache')
+              ->header('Expires', '0');
+        }
 
         return back()->with('message', 'Donasi berhasil diperbarui!');
     }

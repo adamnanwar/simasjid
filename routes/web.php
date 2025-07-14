@@ -107,6 +107,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/donasi', function () {
                 return Inertia::render('admin/keuangan/donasi');
             })->name('donasi');
+            Route::get('/zakat', function () {
+                return Inertia::render('admin/keuangan/zakat');
+            })->name('zakat');
             Route::get('/kas', [LaporanKasController::class, 'adminIndex'])->name('kas');
         });
         

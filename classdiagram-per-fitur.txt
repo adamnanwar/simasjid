@@ -1,0 +1,76 @@
+CLASS DIAGRAM PER FITUR SIMASJID
+================================
+
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ClassBackgroundColor white
+skinparam ClassBorderColor black
+
+class User {
+  +id
+  +name
+  +email
+  +password
+}
+
+class Admin {
+  +id
+  +name
+  +email
+  +password
+}
+
+class LaporanKas {
+  +id
+  +jenis
+  +jumlah
+  +tanggal
+  +kategori
+}
+
+class Donation {
+  +id
+  +nama_donatur
+  +kategori
+  +jumlah
+  +tanggal
+}
+
+class JanjiTemu {
+  +id
+  +user_id
+  +ustadz_id
+  +waktu
+  +status
+}
+
+class Ustadz {
+  +id
+  +nama
+  +jadwal
+}
+
+class BeritaKegiatan {
+  +id
+  +judul
+  +isi
+  +tanggal
+}
+
+class PengurusMasjid {
+  +id
+  +nama
+  +jabatan
+}
+
+User "1" -- "*" LaporanKas
+User "1" -- "*" Donation
+User "1" -- "*" JanjiTemu
+Ustadz "1" -- "*" JanjiTemu
+Admin "1" -- "*" LaporanKas
+Admin "1" -- "*" BeritaKegiatan
+Admin "1" -- "*" PengurusMasjid
+@enduml
+``` 

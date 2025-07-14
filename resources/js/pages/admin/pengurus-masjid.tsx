@@ -105,14 +105,14 @@ export default function AdminPengurusMasjid() {
                 formData.append('foto', data.foto);
             }
             
-            router.post(`/pengurus-masjid/${editingPengurus.id}`, formData, {
+            router.post(`/admin/pengurus-masjid/${editingPengurus.id}`, formData, {
                 onSuccess: () => {
                     handleCloseDialog();
                     fetchPengurus();
                 }
             });
         } else {
-            post('/pengurus-masjid', {
+            post('/admin/pengurus-masjid', {
                 forceFormData: true,
                 onSuccess: () => {
                     handleCloseDialog();
@@ -129,7 +129,7 @@ export default function AdminPengurusMasjid() {
     const handleDelete = () => {
         if (!deleteConfirm.id) return;
         
-        router.delete(`/pengurus-masjid/${deleteConfirm.id}`, {
+        router.delete(`/admin/pengurus-masjid/${deleteConfirm.id}`, {
             onSuccess: () => {
                 showAlert('success', 'Berhasil!', 'Pengurus berhasil dihapus!');
                 fetchPengurus();

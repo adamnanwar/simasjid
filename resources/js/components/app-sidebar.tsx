@@ -29,7 +29,7 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
     },
     {
-        title: 'Laporan Infaq & Sedekah',
+        title: 'Zakat Infaq Sedekah',
         href: '/laporan-infaq',
         icon: Heart,
     },

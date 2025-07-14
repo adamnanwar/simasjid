@@ -158,7 +158,12 @@ export default function AdminBerita() {
             const formData = new FormData();
             formData.append('judul', data.judul);
             formData.append('konten', data.konten);
-            formData.append('jenis', data.kategori === 'Berita' ? 'berita' : 'kegiatan');
+            formData.append('kategori', data.kategori);
+            
+            // Determine jenis based on kategori
+            const jenisValue = ['Pengumuman', 'Kajian', 'Pembangunan'].includes(data.kategori) ? 'berita' : 'kegiatan';
+            formData.append('jenis', jenisValue);
+            
             formData.append('penulis', data.penulis);
             formData.append('tanggal_publikasi', data.tanggal_publikasi);
             
@@ -252,12 +257,16 @@ export default function AdminBerita() {
             formData.append('_method', 'PUT');
             formData.append('judul', berita.judul);
             formData.append('konten', berita.konten);
-            formData.append('jenis', berita.kategori === 'Berita' ? 'berita' : 'kegiatan');
+            formData.append('kategori', berita.kategori);
+            
+            // Determine jenis based on kategori
+            const jenisValue = ['Pengumuman', 'Kajian', 'Pembangunan'].includes(berita.kategori) ? 'berita' : 'kegiatan';
+            formData.append('jenis', jenisValue);
+            
             formData.append('penulis', berita.penulis);
             formData.append('tanggal_publikasi', berita.tanggal_publikasi.split('T')[0]);
             formData.append('status', newStatus); // Add the new status
             formData.append('ringkasan', berita.ringkasan);
-            formData.append('kategori', berita.kategori);
 
             const response = await fetch(`/berita-kegiatan/${id}`, {
                 method: 'POST',

@@ -75,8 +75,24 @@ export default function AdminDashboard({ stats }: Props) {
                                     <Banknote className="w-6 h-6 text-yellow-600" />
                                 </div>
                                 <div className="ml-4">
-                                    <h3 className="text-sm font-medium text-gray-900">Donasi/Infaq</h3>
+                                    <h3 className="text-sm font-medium text-gray-900">Zakat Infaq Sedekah</h3>
                                     <p className="text-sm text-gray-500">Kelola donasi masjid</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/admin/keuangan/zakat">
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardContent className="p-6">
+                            <div className="flex items-center">
+                                <div className="p-3 rounded-full bg-emerald-100">
+                                    <TrendingUp className="w-6 h-6 text-emerald-600" />
+                                </div>
+                                <div className="ml-4">
+                                    <h3 className="text-sm font-medium text-gray-900">Kelola Zakat</h3>
+                                    <p className="text-sm text-gray-500">Manajemen zakat masjid</p>
                                 </div>
                             </div>
                         </CardContent>

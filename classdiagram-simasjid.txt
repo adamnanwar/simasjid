@@ -1,0 +1,196 @@
+CLASS DIAGRAM SIMASJID
+=====================
+
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ClassBackgroundColor white
+skinparam ClassBorderColor black
+
+class User {
+  +id: bigint
+  +name: string
+  +email: string
+  +password: string
+  +role: enum
+  +created_at: timestamp
+  +updated_at: timestamp
+  --
+  +login()
+  +logout()
+  +isAdmin(): boolean
+}
+
+class LaporanKas {
+  +id: bigint
+  +jenis: enum
+  +keterangan: string
+  +jumlah: decimal
+  +tanggal: date
+  +kategori: string
+  +admin_id: bigint
+  +created_at: timestamp
+  +updated_at: timestamp
+  --
+  +create()
+  +update()
+  +delete()
+  +calculateSaldo(): decimal
+}
+
+class Donation {
+  +id: bigint
+  +nama_donatur: string
+  +email: string
+  +phone: string
+  +tanggal: date
+  +kategori: enum
+  +jumlah: decimal
+  +status: enum
+  +anonim: boolean
+  +created_at: timestamp
+  +updated_at: timestamp
+  --
+  +create()
+  +updateStatus()
+  +generateReceipt(): string
+}
+
+class JanjiTemu {
+  +id: bigint
+  +nama: string
+  +email: string
+  +phone: string
+  +keperluan: text
+  +tanggal: date
+  +waktu: time
+  +status: enum
+  +ustadz_id: bigint
+  +created_at: timestamp
+  +updated_at: timestamp
+  --
+  +create()
+  +updateStatus()
+  +approve()
+  +reject()
+}
+
+class Ustadz {
+  +id: bigint
+  +nama: string
+  +email: string
+  +phone: string
+  +spesialisasi: string
+  +jadwal: json
+  +status: enum
+  +created_at: timestamp
+  +updated_at: timestamp
+  --
+  +create()
+  +update()
+  +setJadwal()
+  +getAvailability(): array
+}
+
+class BeritaKegiatan {
+  +id: bigint
+  +judul: string
+  +slug: string
+  +isi: text
+  +gambar: string
+  +tanggal: date
+  +status: enum
+  +admin_id: bigint
+  +created_at: timestamp
+  +updated_at: timestamp
+  --
+  +create()
+  +update()
+  +publish()
+  +unpublish()
+}
+
+class PengurusMasjid {
+  +id: bigint
+  +nama: string
+  +jabatan: string
+  +email: string
+  +phone: string
+  +foto: string
+  +deskripsi: text
+  +urutan: integer
+  +created_at: timestamp
+  +updated_at: timestamp
+  --
+  +create()
+  +update()
+  +delete()
+  +reorder()
+}
+
+class LaporanKasController {
+  +index()
+  +store()
+  +update()
+  +destroy()
+  +adminIndex()
+}
+
+class DonationController {
+  +index()
+  +store()
+  +updateStatus()
+}
+
+class JanjiTemuController {
+  +index()
+  +store()
+  +adminIndex()
+  +updateStatus()
+}
+
+class BeritaKegiatanController {
+  +index()
+  +store()
+  +update()
+  +destroy()
+  +adminIndex()
+  +toggleStatus()
+}
+
+class PengurusMasjidController {
+  +index()
+  +store()
+  +update()
+  +destroy()
+  +adminIndex()
+}
+
+class UstadzController {
+  +index()
+  +store()
+  +update()
+  +destroy()
+  +setJadwal()
+}
+
+' Relationships
+User ||--o{ LaporanKas : manages
+User ||--o{ Donation : creates
+User ||--o{ JanjiTemu : books
+User ||--o{ BeritaKegiatan : creates
+User ||--o{ PengurusMasjid : manages
+
+Ustadz ||--o{ JanjiTemu : handles
+
+LaporanKasController --> LaporanKas : controls
+DonationController --> Donation : controls
+JanjiTemuController --> JanjiTemu : controls
+BeritaKegiatanController --> BeritaKegiatan : controls
+PengurusMasjidController --> PengurusMasjid : controls
+UstadzController --> Ustadz : controls
+
+@enduml
+``` 

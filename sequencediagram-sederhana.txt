@@ -1,0 +1,246 @@
+SEQUENCE DIAGRAM SEDERHANA PER FITUR SIMASJID
+=============================================
+
+1. SEQUENCE DIAGRAM LAPORAN KAS
+-------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+participant "Admin" as Admin
+participant "Halaman Kas" as HalamanKas
+participant "Form Data" as FormData
+participant "Database" as Database
+
+Admin -> HalamanKas: Akses Menu Kas
+activate HalamanKas
+HalamanKas -> Database: Load Data Kas
+activate Database
+Database --> HalamanKas: Return Data
+deactivate Database
+HalamanKas --> Admin: Tampilkan Daftar Kas
+deactivate HalamanKas
+
+Admin -> FormData: Pilih Aksi CRUD
+activate FormData
+Admin -> FormData: Input/Edit Data
+FormData -> Database: Simpan Data
+activate Database
+Database --> FormData: Konfirmasi
+deactivate Database
+FormData --> Admin: Berhasil Disimpan
+deactivate FormData
+
+@enduml
+```
+
+2. SEQUENCE DIAGRAM LAPORAN INFAQ & SEDEKAH
+-------------------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+participant "Admin" as Admin
+participant "Halaman Infaq" as HalamanInfaq
+participant "Form Data" as FormData
+participant "Database" as Database
+
+Admin -> HalamanInfaq: Akses Menu Infaq
+activate HalamanInfaq
+HalamanInfaq -> Database: Load Data Donasi
+activate Database
+Database --> HalamanInfaq: Return Data
+deactivate Database
+HalamanInfaq --> Admin: Tampilkan Daftar Donasi
+deactivate HalamanInfaq
+
+Admin -> FormData: Pilih Aksi CRUD
+activate FormData
+Admin -> FormData: Input/Edit Data
+FormData -> Database: Simpan Data
+activate Database
+Database --> FormData: Konfirmasi
+deactivate Database
+FormData --> Admin: Berhasil Disimpan
+deactivate FormData
+
+@enduml
+```
+
+3. SEQUENCE DIAGRAM SIMULASI HITUNG ZAKAT
+-----------------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+participant "User" as User
+participant "Halaman Zakat" as HalamanZakat
+participant "Form Kalkulator" as FormKalkulator
+
+User -> HalamanZakat: Akses Menu Zakat
+activate HalamanZakat
+HalamanZakat --> User: Tampilkan Halaman
+deactivate HalamanZakat
+
+User -> FormKalkulator: Input Data Zakat
+activate FormKalkulator
+User -> FormKalkulator: Klik Hitung
+FormKalkulator -> FormKalkulator: Proses Perhitungan
+FormKalkulator --> User: Tampilkan Hasil
+deactivate FormKalkulator
+
+@enduml
+```
+
+4. SEQUENCE DIAGRAM JAM SHOLAT
+------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+participant "User" as User
+participant "Halaman Sholat" as HalamanSholat
+
+User -> HalamanSholat: Akses Menu Jam Sholat
+activate HalamanSholat
+HalamanSholat -> HalamanSholat: Load Jadwal Sholat
+HalamanSholat --> User: Tampilkan Jadwal
+deactivate HalamanSholat
+
+@enduml
+```
+
+5. SEQUENCE DIAGRAM JANJI TEMU USTADZ
+-------------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+participant "User" as User
+participant "Admin" as Admin
+participant "Halaman Janji Temu" as HalamanJT
+participant "Form Booking" as FormBooking
+participant "Database" as Database
+
+User -> HalamanJT: Akses Menu Janji Temu
+activate HalamanJT
+HalamanJT --> User: Tampilkan Form
+deactivate HalamanJT
+
+User -> FormBooking: Input Data & Pilih Ustadz
+activate FormBooking
+User -> FormBooking: Submit Permintaan
+FormBooking -> Database: Simpan Permintaan
+activate Database
+Database --> FormBooking: Konfirmasi
+deactivate Database
+FormBooking --> Admin: Notifikasi Admin
+FormBooking --> User: Permintaan Terkirim
+deactivate FormBooking
+
+Admin -> FormBooking: Review Permintaan
+activate FormBooking
+Admin -> FormBooking: Approve/Reject
+FormBooking -> Database: Update Status
+activate Database
+Database --> FormBooking: Konfirmasi
+deactivate Database
+FormBooking --> User: Kirim Notifikasi
+deactivate FormBooking
+
+@enduml
+```
+
+6. SEQUENCE DIAGRAM BERITA & KEGIATAN
+-------------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+participant "Admin" as Admin
+participant "Halaman Berita" as HalamanBerita
+participant "Form Data" as FormData
+participant "Database" as Database
+
+Admin -> HalamanBerita: Akses Menu Berita
+activate HalamanBerita
+HalamanBerita -> Database: Load Data Berita
+activate Database
+Database --> HalamanBerita: Return Data
+deactivate Database
+HalamanBerita --> Admin: Tampilkan Daftar Berita
+deactivate HalamanBerita
+
+Admin -> FormData: Pilih Aksi CRUD
+activate FormData
+Admin -> FormData: Input/Edit Data
+FormData -> Database: Simpan Data
+activate Database
+Database --> FormData: Konfirmasi
+deactivate Database
+FormData --> Admin: Berhasil Disimpan
+deactivate FormData
+
+@enduml
+```
+
+7. SEQUENCE DIAGRAM PENGURUS MASJID
+-----------------------------------
+```plantuml
+@startuml
+skinparam defaultFontSize 16
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+participant "Admin" as Admin
+participant "Halaman Pengurus" as HalamanPengurus
+participant "Form Data" as FormData
+participant "Database" as Database
+
+Admin -> HalamanPengurus: Akses Menu Pengurus
+activate HalamanPengurus
+HalamanPengurus -> Database: Load Data Pengurus
+activate Database
+Database --> HalamanPengurus: Return Data
+deactivate Database
+HalamanPengurus --> Admin: Tampilkan Daftar Pengurus
+deactivate HalamanPengurus
+
+Admin -> FormData: Pilih Aksi CRUD
+activate FormData
+Admin -> FormData: Input/Edit Data
+FormData -> Database: Simpan Data
+activate Database
+Database --> FormData: Konfirmasi
+deactivate Database
+FormData --> Admin: Berhasil Disimpan
+deactivate FormData
+
+@enduml
+``` 

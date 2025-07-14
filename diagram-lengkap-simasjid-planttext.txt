@@ -1,0 +1,988 @@
+DIAGRAM LENGKAP SIMASJID - PLANTUML FORMAT
+==============================================
+Berdasarkan style PDF Tugas Akhir yang telah dianalisis
+Siap digunakan di www.planttext.com
+
+==============================================
+1. USE CASE DIAGRAM KESELURUHAN
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Use Case Diagram Keseluruhan
+
+left to right direction
+
+actor Admin as A
+actor "Guest/Jemaah" as G
+actor "Ustadz" as U
+
+rectangle "SIMASJID System" {
+  
+  package "Authentication" {
+    usecase "Login Admin" as UC1
+    usecase "Logout" as UC2
+  }
+  
+  package "Kelola Kas Masjid" {
+    usecase "Tambah Transaksi Kas" as UC3
+    usecase "Edit Transaksi Kas" as UC4
+    usecase "Hapus Transaksi Kas" as UC5
+    usecase "Lihat Laporan Kas" as UC6
+    usecase "Export Laporan Kas" as UC7
+  }
+  
+  package "Kelola Donasi/Infaq" {
+    usecase "Kelola Status Donasi" as UC8
+    usecase "Lihat Riwayat Donasi" as UC9
+    usecase "Export Laporan Donasi" as UC10
+    usecase "Lihat Laporan Donasi Public" as UC11
+  }
+  
+  package "Kelola Janji Temu" {
+    usecase "Approve Janji Temu" as UC12
+    usecase "Reject Janji Temu" as UC13
+    usecase "Lihat Jadwal Ustadz" as UC14
+    usecase "Buat Janji Temu" as UC15
+    usecase "Lihat Status Janji Temu" as UC16
+  }
+  
+  package "Kelola Berita & Kegiatan" {
+    usecase "Tambah Berita" as UC17
+    usecase "Edit Berita" as UC18
+    usecase "Publish Berita" as UC19
+    usecase "Hapus Berita" as UC20
+    usecase "Lihat Berita Public" as UC21
+  }
+  
+  package "Kelola Pengurus" {
+    usecase "Tambah Pengurus" as UC22
+    usecase "Edit Data Pengurus" as UC23
+    usecase "Hapus Pengurus" as UC24
+    usecase "Lihat Pengurus Public" as UC25
+  }
+  
+  package "Kelola Ustadz" {
+    usecase "Tambah Ustadz" as UC26
+    usecase "Edit Jadwal Ustadz" as UC27
+    usecase "Nonaktifkan Ustadz" as UC28
+  }
+  
+  package "Dashboard & Utilitas" {
+    usecase "Lihat Dashboard" as UC29
+    usecase "Hitung Zakat" as UC30
+    usecase "Lihat Jadwal Sholat" as UC31
+    usecase "Generate Laporan" as UC32
+  }
+}
+
+' Admin connections
+A --> UC1
+A --> UC2
+A --> UC3
+A --> UC4
+A --> UC5
+A --> UC6
+A --> UC7
+A --> UC8
+A --> UC9
+A --> UC10
+A --> UC12
+A --> UC13
+A --> UC14
+A --> UC17
+A --> UC18
+A --> UC19
+A --> UC20
+A --> UC22
+A --> UC23
+A --> UC24
+A --> UC26
+A --> UC27
+A --> UC28
+A --> UC29
+A --> UC32
+
+' Guest connections
+G --> UC11
+G --> UC15
+G --> UC16
+G --> UC21
+G --> UC25
+G --> UC29
+G --> UC30
+G --> UC31
+
+' Ustadz connections
+U --> UC14
+U --> UC16
+
+' Dependencies
+UC15 ..> UC14 : extends
+UC12 ..> UC15 : extends
+UC13 ..> UC15 : extends
+
+@enduml
+```
+
+==============================================
+2. ACTIVITY DIAGRAM - LOGIN & AUTHENTICATION
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Activity Diagram Login & Authentication
+
+|Browser|
+start
+:Akses halaman login;
+
+|System|
+:Cek active session;
+if (Session exists?) then (ya)
+  :Redirect ke dashboard;
+  stop
+else (tidak)
+  :Tampilkan form login;
+  :Generate CSRF token;
+endif
+
+|Browser|
+:Input email & password;
+:Submit form;
+
+|System|
+:Validasi input client-side;
+if (Format valid?) then (tidak)
+  :Tampilkan error;
+  :Reset form fields;
+else (ya)
+  :Encrypt credentials;
+  :Kirim request ke server;
+endif
+
+|Server|
+:Validasi CSRF token;
+if (CSRF valid?) then (tidak)
+  :Log security warning;
+  :Return error;
+else (ya)
+  :Rate limit check;
+  if (Rate limit exceeded?) then (ya)
+    :Log attempt;
+    :Return error;
+  else (tidak)
+    :Validasi kredensial;
+    if (Akun ditemukan?) then (tidak)
+      :Log attempt;
+      :Return error;
+    else (ya)
+      if (Akun aktif?) then (tidak)
+        :Return error;
+      else (ya)
+        if (Password valid?) then (tidak)
+          :Increment failed attempts;
+          if (Failed > 3?) then (ya)
+            :Lock account;
+            :Send alert;
+          endif
+          :Return error;
+        else (ya)
+          :Reset failed attempts;
+          :Generate session token;
+          :Set session data;
+          :Log success;
+          :Return success;
+        endif
+      endif
+    endif
+  endif
+endif
+
+|System|
+:Process response;
+if (Login success?) then (tidak)
+  :Display error message;
+  :Clear sensitive fields;
+else (ya)
+  :Store session token;
+  :Initialize app state;
+  if (Role = Admin?) then (ya)
+    :Redirect ke Admin Dashboard;
+  else (tidak)
+    :Redirect ke User Dashboard;
+  endif
+endif
+
+stop
+
+@enduml
+```
+
+==============================================
+2.1 ACTIVITY DIAGRAM - LOGIN & AUTHENTICATION (SISTEM BERJALAN)
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Activity Diagram Login & Authentication (Sistem Berjalan)
+
+|Pengurus/Staff|
+start
+:Datang ke masjid;
+:Melapor ke petugas keamanan;
+
+|Petugas Keamanan|
+:Memeriksa identitas pengurus;
+if (Kenal dengan pengurus?) then (tidak)
+  :Meminta kartu identitas;
+  :Mencatat di buku tamu;
+  :Menghubungi pengurus lain\nuntuk verifikasi;
+  if (Terverifikasi?) then (tidak)
+    :Menolak akses;
+    stop
+  endif
+endif
+
+|Pengurus/Staff|
+:Menuju ruang sekretariat;
+:Mengambil kunci ruangan;
+:Membuka ruang sekretariat;
+:Menandatangani buku kehadiran;
+
+|Ruang Sekretariat|
+:Menyalakan komputer;
+if (Komputer bisa digunakan?) then (tidak)
+  :Lapor ke bagian umum;
+  :Menunggu perbaikan;
+  :Menggunakan komputer cadangan;
+else (ya)
+  :Login Windows;
+endif
+
+|Pengurus/Staff|
+:Membuka file-file yang dibutuhkan;
+if (File ditemukan?) then (tidak)
+  :Mencari di folder lain;
+  :Tanya pengurus lain;
+  if (File ketemu?) then (tidak)
+    :Membuat file baru;
+  endif
+endif
+
+:Mulai bekerja dengan data;
+
+|Selesai Bekerja|
+:Menyimpan file;
+:Backup ke flashdisk;
+:Matikan komputer;
+:Mengisi log aktivitas harian;
+:Kunci ruangan;
+:Kembalikan kunci;
+:Tandatangan buku keluar;
+
+stop
+
+@enduml
+```
+
+==============================================
+2.2 ACTIVITY DIAGRAM - LOGIN & AUTHENTICATION (SISTEM DIUSULKAN)
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Activity Diagram Login & Authentication (Sistem Diusulkan)
+
+|Browser|
+start
+:Akses halaman login;
+
+|System|
+:Cek active session;
+if (Session exists?) then (ya)
+  :Redirect ke dashboard;
+  stop
+else (tidak)
+  :Tampilkan form login;
+  :Generate CSRF token;
+endif
+
+|Browser|
+:Input email & password;
+:Submit form;
+
+|System|
+:Validasi input client-side;
+if (Format valid?) then (tidak)
+  :Tampilkan error;
+  :Reset form fields;
+else (ya)
+  :Encrypt credentials;
+  :Kirim request ke server;
+endif
+
+|Server|
+:Validasi CSRF token;
+if (CSRF valid?) then (tidak)
+  :Log security warning;
+  :Return error;
+else (ya)
+  :Rate limit check;
+  if (Rate limit exceeded?) then (ya)
+    :Log attempt;
+    :Return error;
+  else (tidak)
+    :Validasi kredensial;
+    if (Akun ditemukan?) then (tidak)
+      :Log attempt;
+      :Return error;
+    else (ya)
+      if (Akun aktif?) then (tidak)
+        :Return error;
+      else (ya)
+        if (Password valid?) then (tidak)
+          :Increment failed attempts;
+          if (Failed > 3?) then (ya)
+            :Lock account;
+            :Send alert;
+          endif
+          :Return error;
+        else (ya)
+          :Reset failed attempts;
+          :Generate session token;
+          :Set session data;
+          :Log success;
+          :Return success;
+        endif
+      endif
+    endif
+  endif
+endif
+
+|System|
+:Process response;
+if (Login success?) then (tidak)
+  :Display error message;
+  :Clear sensitive fields;
+else (ya)
+  :Store session token;
+  :Initialize app state;
+  if (Role = Admin?) then (ya)
+    :Redirect ke Admin Dashboard;
+  else (tidak)
+    :Redirect ke User Dashboard;
+  endif
+endif
+
+stop
+
+@enduml
+```
+
+==============================================
+3. SEQUENCE DIAGRAM - KELOLA KAS MASJID
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Sequence Diagram Kelola Kas Masjid
+
+actor Admin
+participant "Web Interface" as UI
+participant "KasController" as Controller
+participant "LaporanKas Model" as Model
+database "MySQL Database" as DB
+participant "Session Manager" as Session
+
+Admin -> UI: akses_menu_kas()
+activate UI
+
+UI -> Session: check_admin_session()
+activate Session
+Session --> UI: session_valid()
+deactivate Session
+
+UI -> Controller: getKasList()
+activate Controller
+
+Controller -> Model: getAllTransaksi()
+activate Model
+
+Model -> DB: SELECT * FROM laporan_kas ORDER BY tanggal DESC
+activate DB
+DB --> Model: result_set
+deactivate DB
+
+Model --> Controller: transaksi_data[]
+deactivate Model
+
+Controller --> UI: render_kas_view(data)
+deactivate Controller
+
+UI --> Admin: tampilkan_daftar_kas()
+deactivate UI
+
+== Tambah Transaksi Baru ==
+
+Admin -> UI: klik_tambah_kas()
+activate UI
+
+UI --> Admin: tampilkan_form_tambah()
+
+Admin -> UI: submit_form_kas(jenis, jumlah, keterangan, kategori)
+
+UI -> Controller: storeKas(request_data)
+activate Controller
+
+Controller -> Controller: validate_input()
+note right: Validasi:\n- Required fields\n- Numeric amount\n- Valid enum jenis
+
+alt Data Valid
+    Controller -> Model: create(validated_data)
+    activate Model
+    
+    Model -> DB: INSERT INTO laporan_kas
+    activate DB
+    DB --> Model: insert_id
+    deactivate DB
+    
+    Model -> Model: calculateSaldoTotal()
+    note right: Hitung ulang total saldo\nberdasarkan semua transaksi
+    
+    Model -> DB: UPDATE saldo_cache
+    activate DB
+    DB --> Model: update_success
+    deactivate DB
+    
+    Model --> Controller: success_response
+    deactivate Model
+    
+    Controller --> UI: redirect_with_success()
+    
+else Data Invalid
+    Controller --> UI: return_with_errors()
+end
+
+deactivate Controller
+
+UI --> Admin: tampilkan_notifikasi()
+deactivate UI
+
+@enduml
+```
+
+==============================================
+4. FLOWCHART - PROSES KELOLA KAS MASJID
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Flowchart Kelola Kas Masjid
+
+|#lightblue|Admin|
+start
+:Login dan verifikasi akses;
+:Akses menu Kas Masjid;
+
+|#lightgreen|System|
+:Load data kas:
+- Saldo terkini
+- Riwayat transaksi
+- Statistik;
+
+|#lightblue|Admin|
+repeat
+  :Pilih operasi kas;
+  
+  split
+    :Tambah Transaksi;
+    :Input data transaksi:
+    * Jenis (Masuk/Keluar)
+    * Jumlah
+    * Kategori
+    * Keterangan
+    * Tanggal
+    * Bukti transaksi;
+    
+    |#lightgreen|System|
+    :Validasi input:
+    * Required fields
+    * Format nominal
+    * Tanggal valid
+    * File upload;
+    
+    if (Data valid?) then (tidak)
+      :Tampilkan error;
+      :Highlight invalid fields;
+    else (ya)
+      :Begin transaction;
+      :Insert ke database;
+      :Update saldo total;
+      :Commit transaction;
+      :Generate receipt;
+      :Log activity;
+    endif
+    
+  split again
+    :Edit Transaksi;
+    :Pilih record transaksi;
+    
+    |#lightgreen|System|
+    :Load detail transaksi;
+    :Cek permission edit;
+    
+    |#lightblue|Admin|
+    :Modifikasi data;
+    
+    |#lightgreen|System|
+    :Validasi perubahan;
+    if (Valid?) then (ya)
+      :Begin transaction;
+      :Update record;
+      :Recalculate saldo;
+      :Commit changes;
+      :Log perubahan;
+    else (tidak)
+      :Rollback changes;
+      :Display error;
+    endif
+    
+  split again
+    :Hapus Transaksi;
+    
+    |#lightgreen|System|
+    :Konfirmasi penghapusan;
+    
+    |#lightblue|Admin|
+    if (Konfirmasi?) then (ya)
+      |#lightgreen|System|
+      :Soft delete record;
+      :Update saldo total;
+      :Log penghapusan;
+    else (tidak)
+      :Batalkan operasi;
+    endif
+    
+  split again
+    :Export Laporan;
+    :Pilih parameter:
+    * Periode
+    * Format
+    * Detail level;
+    
+    |#lightgreen|System|
+    :Generate laporan;
+    :Create file;
+    :Log export;
+    
+    |#lightblue|Admin|
+    :Download file;
+    
+  end split
+  
+  |#lightgreen|System|
+  :Refresh data kas;
+  :Update dashboard;
+  
+  |#lightblue|Admin|
+  :Review perubahan;
+  
+repeat while (Lanjut operasi?) is (ya)
+->tidak;
+
+stop
+
+@enduml
+```
+
+==============================================
+5. USE CASE DIAGRAM - KELOLA DONASI
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Use Case Diagram Kelola Donasi
+
+left to right direction
+
+actor Admin as A
+actor "Guest/Donatur" as D
+
+rectangle "Sistem Donasi SIMASJID" {
+  
+  usecase "Lihat Daftar Donasi" as UC1
+  usecase "Update Status Donasi" as UC2
+  usecase "Export Laporan Donasi" as UC3
+  usecase "Kirim Notifikasi Donatur" as UC4
+  usecase "Filter Donasi" as UC5
+  usecase "Tambah Donasi Manual" as UC6
+  
+  usecase "Lihat Laporan Donasi Public" as UC7
+  usecase "Donasi Online" as UC8
+  usecase "Track Status Donasi" as UC9
+  usecase "Download Receipt" as UC10
+}
+
+' Admin use cases
+A --> UC1
+A --> UC2
+A --> UC3
+A --> UC4
+A --> UC5
+A --> UC6
+
+' Guest/Donatur use cases  
+D --> UC7
+D --> UC8
+D --> UC9
+D --> UC10
+
+' Dependencies
+UC2 ..> UC4 : includes
+UC3 ..> UC1 : extends
+UC5 ..> UC1 : extends
+
+@enduml
+```
+
+==============================================
+6. ACTIVITY DIAGRAM - PROSES DONASI ONLINE
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Activity Diagram Proses Donasi Online
+
+|#lightblue|Donatur|
+start
+:Akses halaman donasi;
+:Pilih jenis donasi:
+* Infaq
+* Sedekah
+* Zakat;
+
+|#lightgreen|System|
+:Load opsi pembayaran;
+:Display form donasi;
+
+|#lightblue|Donatur|
+:Input data donasi:
+* Nama (opsional)
+* Email
+* Nominal
+* Pesan/Doa;
+
+:Pilih metode pembayaran;
+
+|#lightgreen|System|
+if (Metode?) then (Bank Transfer)
+  :Generate VA number;
+  :Set expired time 24h;
+  :Display instruksi transfer;
+else (E-wallet/QRIS)
+  :Generate payment token;
+  :Redirect ke payment gateway;
+  :Set expired time 15m;
+endif
+
+|#orange|Payment Gateway|
+:Process payment request;
+:Validate amount;
+:Handle payment;
+
+|#lightgreen|System|
+:Listen payment callback;
+
+if (Status?) then (Success)
+  :Update status = PAID;
+  :Calculate total donasi;
+  :Generate receipt;
+  :Send notifications;
+else (Failed)
+  :Update status = FAILED;
+  :Log error;
+  :Send failure notice;
+  stop
+endif
+
+|#purple|Admin|
+:Review donasi masuk;
+:Verifikasi pembayaran;
+
+if (Valid?) then (ya)
+  :Approve donasi;
+  :Input catatan;
+  
+  |#lightgreen|System|
+  :Update status = VERIFIED;
+  :Send confirmation;
+  :Update statistik;
+  
+else (tidak)
+  :Reject donasi;
+  :Input alasan;
+  
+  |#lightgreen|System|
+  :Update status = REJECTED;
+  :Send rejection notice;
+  :Reverse transaction;
+endif
+
+|#lightblue|Donatur|
+:Terima notifikasi final;
+if (Status = VERIFIED) then (ya)
+  :Download receipt;
+  :Share donasi (optional);
+endif
+
+stop
+
+@enduml
+```
+
+==============================================
+7. SEQUENCE DIAGRAM - BOOKING JANJI TEMU
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Sequence Diagram Booking Janji Temu
+
+actor "Guest" as G
+participant "Web UI" as UI
+participant "BookingController" as BC
+participant "UstadzService" as US
+participant "ValidationService" as VS
+participant "BookingService" as BS
+participant "NotificationService" as NS
+database "Database" as DB
+
+G -> UI: accessBookingPage()
+activate UI
+
+UI -> BC: getBookingForm()
+activate BC
+
+BC -> US: getActiveUstadz()
+activate US
+US -> DB: queryActiveUstadz()
+DB --> US: ustadzList[]
+US --> BC: availableUstadz[]
+deactivate US
+
+BC --> UI: renderBookingForm()
+deactivate BC
+
+UI --> G: displayBookingForm()
+deactivate UI
+
+G -> UI: selectUstadz(id)
+activate UI
+
+UI -> BC: getUstadzSchedule(id)
+activate BC
+
+BC -> US: getAvailableSlots(id, date)
+activate US
+US -> DB: queryAvailability()
+DB --> US: timeSlots[]
+US --> BC: availableSlots[]
+deactivate US
+
+BC --> UI: renderTimeSlots()
+deactivate BC
+
+UI --> G: displayAvailableSlots()
+deactivate UI
+
+G -> UI: submitBooking(data)
+activate UI
+
+UI -> BC: createBooking(request)
+activate BC
+
+BC -> VS: validateRequest(data)
+activate VS
+VS --> BC: validationResult
+deactivate VS
+
+alt Invalid Request
+    BC --> UI: returnValidationErrors()
+    UI --> G: displayErrors()
+else Valid Request
+    BC -> BS: processBooking(data)
+    activate BS
+    
+    BS -> DB: beginTransaction()
+    activate DB
+    
+    BS -> DB: checkSlotAvailability()
+    alt Slot Not Available
+        DB --> BS: slotTaken
+        BS --> BC: bookingFailed
+        BC --> UI: showError()
+        UI --> G: displaySlotTakenError()
+    else Slot Available
+        BS -> DB: createBookingRecord()
+        BS -> DB: updateUstadzSchedule()
+        DB --> BS: bookingCreated
+        
+        BS -> NS: sendNotifications()
+        activate NS
+        
+        par Notifications
+            NS -> NS: sendGuestConfirmation()
+            NS -> NS: sendAdminAlert()
+            NS -> NS: sendUstadzNotice()
+        end
+        
+        NS --> BS: notificationsSent
+        deactivate NS
+        
+        DB -> DB: commitTransaction()
+        deactivate DB
+        
+        BS --> BC: bookingSuccess
+        deactivate BS
+        
+        BC --> UI: redirectToSuccess()
+        UI --> G: showSuccessPage()
+    end
+end
+
+deactivate BC
+deactivate UI
+
+@enduml
+```
+
+==============================================
+8. FLOWCHART - APPROVAL JANJI TEMU (ADMIN)
+==============================================
+
+```plantuml
+@startuml
+title SIMASJID - Flowchart Approval Janji Temu (Admin)
+
+start
+
+:Admin login ke sistem;
+:Akses menu "Kelola Janji Temu";
+:Load daftar janji temu pending;
+
+:Tampilkan dashboard janji temu:
+- Pending approvals
+- Jadwal hari ini
+- Statistik bulanan;
+
+while (Ada janji temu pending?) is (ya)
+  :Pilih janji temu untuk direview;
+  :Tampilkan detail lengkap:
+  - Data pemohon
+  - Keperluan konsultasi
+  - Ustadz yang dipilih
+  - Waktu yang diminta;
+  
+  :Admin review detail request;
+  
+  switch (Keputusan admin?)
+  case (Approve)
+    :Set status = "approved";
+    :Konfirmasi jadwal final;
+    :Input catatan admin (optional);
+    
+    fork
+      :Kirim email approval ke guest;
+      note right: Email berisi:\n- Konfirmasi approval\n- Detail appointment\n- Instruksi persiapan
+    fork again
+      :Kirim notifikasi ke ustadz;
+      note right: SMS/WhatsApp\n(jika tersedia)
+    fork again
+      :Update kalender ustadz;
+      :Block time slot;
+    end fork
+    
+    :Log approval activity;
+    :Update dashboard statistics;
+    
+  case (Reject)
+    :Set status = "rejected";
+    :Input alasan penolakan (wajib);
+    :Suggest alternatif waktu/ustadz;
+    
+    :Kirim email rejection ke guest;
+    note right: Email berisi:\n- Alasan penolakan\n- Saran alternatif\n- Link untuk booking ulang
+    
+    :Release time slot reservation;
+    :Log rejection activity;
+    
+  case (Request More Info)
+    :Set status = "need_clarification";
+    :Input pertanyaan untuk guest;
+    
+    :Kirim email request info;
+    note right: Email meminta\ninformasi tambahan
+    
+    :Set reminder untuk follow-up;
+    
+  case (Reschedule)
+    :Suggest waktu alternatif;
+    :Cek availability ustadz lain;
+    :Kirim opsi reschedule ke guest;
+    
+    :Set status = "rescheduling";
+    :Wait for guest response;
+  endswitch
+  
+  :Update janji temu record;
+  :Refresh daftar pending;
+  
+endwhile (tidak)
+
+:Tampilkan summary aktivitas;
+:Generate laporan approval rate;
+
+if (Admin ingin export laporan?) then (ya)
+  :Pilih periode dan format;
+  :Generate laporan janji temu;
+  :Download file laporan;
+endif
+
+stop
+
+@enduml
+```
+
+==============================================
+PETUNJUK PENGGUNAAN
+==============================================
+
+**CARA MENGGUNAKAN DI PLANTTEXT.COM:**
+
+1. **Buka** www.planttext.com
+2. **Copy** diagram yang diinginkan dari file ini  
+3. **Paste** ke editor PlantText
+4. **Generate** preview otomatis
+5. **Download** sebagai PNG/SVG/PDF
+
+**DIAGRAM TERSEDIA:**
+✅ Use Case Diagram Keseluruhan
+✅ Activity Diagram Login & Authentication  
+✅ Sequence Diagram Kelola Kas Masjid
+✅ Flowchart Proses Kelola Kas Masjid
+✅ Use Case Diagram Kelola Donasi
+✅ Activity Diagram Proses Donasi Online
+✅ Sequence Diagram Booking Janji Temu
+✅ Flowchart Approval Janji Temu (Admin)
+
+**UNTUK DEVELOPMENT:**
+- Gunakan Use Case untuk requirement analysis
+- Gunakan Activity Diagram untuk user journey
+- Gunakan Sequence Diagram untuk API design
+- Gunakan Flowchart untuk business logic
+
+**WARNA TEMA SIMASJID:**
+- Primary: #2E7D32 (Hijau Islami)
+- Secondary: #1976D2 (Biru Teknologi)  
+- Background: #F5F5F5 (Abu-abu terang)

@@ -1,0 +1,63 @@
+CAPTION SWIMLANE DIAGRAM JANJI TEMU DAN ZAKAT (SISTEM DIUSULKAN)
+=================================================================
+
+Gambar 4.X menunjukkan alur proses janji temu dan pembayaran zakat yang diusulkan dalam Sistem Informasi Manajemen Masjid (SIMASJID). Sistem ini dirancang berbasis web dan terintegrasi dengan sistem notifikasi serta pembayaran digital untuk meningkatkan efisiensi dan keamanan transaksi. SIMASJID melibatkan tiga aktor utama: User (Jemaah), Admin (Pengurus Masjid), dan Ustad, dengan alur yang telah dioptimasi secara digital.
+
+Sistem yang diusulkan memberikan solusi terhadap kendala sistem manual dengan fitur-fitur berikut:
+
+1. Manajemen Janji Temu Digital:
+   - Jemaah dapat mengecek ketersediaan ustad secara langsung melalui sistem
+   - Penjadwalan otomatis dengan pengecekan slot waktu yang tersedia
+   - Notifikasi real-time untuk semua pihak yang terlibat
+   - Pencatatan janji temu tersimpan dalam database terpusat
+
+2. Sistem Pembayaran dan Pengelolaan Zakat:
+   - Perhitungan zakat otomatis dengan kalkulator zakat digital
+   - Integrasi dengan payment gateway untuk pembayaran online
+   - Pencatatan dan validasi transaksi secara otomatis
+   - Pelaporan zakat real-time dan transparan
+
+3. Fitur Monitoring dan Pelaporan:
+   - Dashboard admin untuk monitoring aktivitas
+   - Sistem pelaporan otomatis untuk rekap janji temu dan zakat
+   - Tracking status pembayaran dan janji temu secara real-time
+   - Backup data otomatis dan aman
+
+Keunggulan sistem yang diusulkan dibandingkan sistem manual:
+
+1. Efisiensi Waktu:
+   - Eliminasi proses pencatatan manual
+   - Konfirmasi dan notifikasi otomatis
+   - Proses booking dan pembayaran yang lebih cepat
+   - Pembuatan laporan instan
+
+2. Akurasi Data:
+   - Mengurangi kesalahan input manual
+   - Validasi data otomatis
+   - Integrasi data antar modul
+   - Pencatatan transaksi terstruktur
+
+3. Keamanan:
+   - Data tersimpan dalam database terenkripsi
+   - Backup otomatis dan regular
+   - Log aktivitas untuk audit trail
+   - Pembayaran melalui gateway yang aman
+
+4. Aksesibilitas:
+   - Akses 24/7 melalui platform web
+   - Interface yang mobile-friendly
+   - Informasi real-time
+   - Tidak perlu datang ke masjid untuk layanan dasar
+
+5. Transparansi:
+   - Tracking status secara real-time
+   - Histori transaksi yang dapat diakses
+   - Pelaporan yang transparan
+   - Notifikasi status otomatis
+
+Sistem ini dirancang untuk memberikan pengalaman yang lebih baik bagi semua pengguna:
+- Jemaah mendapatkan kemudahan dalam membuat janji dan membayar zakat
+- Admin mendapatkan tools yang efisien untuk manajemen dan monitoring
+- Ustad dapat mengelola jadwal dan konsultasi dengan lebih terstruktur
+
+Implementasi SIMASJID diharapkan dapat meningkatkan efektivitas pengelolaan masjid secara keseluruhan, dengan fokus pada otomatisasi proses, keamanan data, dan kemudahan akses bagi semua pihak yang terlibat. 

@@ -30,6 +30,7 @@ interface PrayerTime {
 export default function JamSholat() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
+    const [displayMonth, setDisplayMonth] = useState(new Date());
     const [sholatTimes, setSholatTimes] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -43,14 +44,13 @@ export default function JamSholat() {
 
     useEffect(() => {
         fetchSholatTimes();
-    }, []);
+    }, [displayMonth]);
 
     const fetchSholatTimes = async () => {
         try {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = (today.getMonth() + 1).toString().padStart(2, '0');
-            const day = today.getDate().toString().padStart(2, '0');
+            const year = displayMonth.getFullYear();
+            const month = (displayMonth.getMonth() + 1).toString().padStart(2, '0');
+            const day = displayMonth.getDate().toString().padStart(2, '0');
             const dateString = `${day}-${month}-${year}`;
             
             const response = await fetch(`/api/sholat-times?date=${dateString}`);
@@ -68,6 +68,62 @@ export default function JamSholat() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Navigation functions for calendar
+    const goToPreviousMonth = () => {
+        const newDate = new Date(displayMonth);
+        newDate.setMonth(newDate.getMonth() - 1);
+        setDisplayMonth(newDate);
+    };
+
+    const goToNextMonth = () => {
+        const newDate = new Date(displayMonth);
+        newDate.setMonth(newDate.getMonth() + 1);
+        setDisplayMonth(newDate);
+    };
+
+    // Get current Hijri date (simplified calculation for 1447H in 2025)
+    const getCurrentHijriDate = () => {
+        const currentYear = new Date().getFullYear();
+        const hijriYear = currentYear === 2025 ? 1447 : 1446 + (currentYear - 2024);
+        const hijriMonths = [
+            'Muharram', 'Safar', 'Rabi\'ul Awwal', 'Rabi\'ul Akhir', 
+            'Jumadil Awwal', 'Jumadil Akhir', 'Rajab', 'Sya\'ban', 
+            'Ramadan', 'Syawal', 'Dzul Qidah', 'Dzul Hijjah'
+        ];
+        
+        // Simplified calculation - this should be more accurate in production
+        const monthIndex = (new Date().getMonth() + 4) % 12; // Rough conversion
+        const day = Math.min(new Date().getDate(), 29); // Hijri months are 29-30 days
+        
+        return {
+            day,
+            month: hijriMonths[monthIndex],
+            year: hijriYear
+        };
+    };
+
+    const hijriDate = getCurrentHijriDate();
+
+    // Calculate days until Ramadan (rough calculation)
+    const getDaysUntilRamadan = () => {
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        
+        // Ramadan typically starts around March-April
+        let ramadanMonth = 3; // March
+        let ramadanYear = now.getFullYear();
+        
+        if (currentMonth >= 4) {
+            ramadanYear += 1;
+        }
+        
+        const ramadanDate = new Date(ramadanYear, ramadanMonth - 1, 15); // Approximate
+        const diffTime = ramadanDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        return Math.max(0, diffDays);
     };
 
     // Default times as fallback
@@ -182,15 +238,29 @@ export default function JamSholat() {
 
     const timeUntilNext = getTimeUntilNextPrayer();
 
-    // Monthly prayer times data using current API times
-    const monthlyPrayerTimes = Array.from({ length: 30 }, (_, i) => ({
+    // Monthly prayer times data using current display month
+    const getDaysInMonth = (date: Date) => {
+        return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    };
+
+    const monthlyPrayerTimes = Array.from({ length: getDaysInMonth(displayMonth) }, (_, i) => ({
         date: i + 1,
+        fullDate: new Date(displayMonth.getFullYear(), displayMonth.getMonth(), i + 1),
         subuh: times.shubuh,
         dzuhur: times.dzuhur,
         ashar: times.ashar,
         maghrib: times.maghrib,
         isya: times.isya
     }));
+
+    const formatDate = (date: Date) => {
+        return date.toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
 
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString('id-ID', {
@@ -200,13 +270,8 @@ export default function JamSholat() {
         });
     };
 
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString('id-ID', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+    const getMonthName = (date: Date) => {
+        return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
     };
 
     return (
@@ -344,20 +409,20 @@ export default function JamSholat() {
                                 </CardHeader>
                                 <CardContent className="text-center">
                                     <div className="text-2xl font-bold text-gray-900 mb-2">
-                                        15 Rajab 1446 H
+                                        {hijriDate.day} {hijriDate.month} {hijriDate.year} H
                                     </div>
                                     <p className="text-gray-600 mb-4">
                                         Tahun Hikmah
                                     </p>
                                     <div className="text-sm text-gray-500">
                                         <p>Sisa hari menuju Ramadan:</p>
-                                        <p className="text-lg font-bold text-purple-600">45 hari</p>
+                                        <p className="text-lg font-bold text-purple-600">{getDaysUntilRamadan()} hari</p>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             {/* Quick Settings */}
-                            <Card className="shadow-lg">
+                            {/* <Card className="shadow-lg">
                                 <CardHeader>
                                     <CardTitle>Pengaturan</CardTitle>
                                 </CardHeader>
@@ -375,7 +440,7 @@ export default function JamSholat() {
                                         Lihat Kalender Bulanan
                                     </Button>
                                 </CardContent>
-                            </Card>
+                            </Card> */}
                         </div>
                     </div>
 
@@ -385,22 +450,22 @@ export default function JamSholat() {
                             <div className="flex items-center justify-between">
                                 <CardTitle className="flex items-center gap-2">
                                     <Calendar className="h-5 w-5" />
-                                    Kalender Jadwal Sholat Januari 2024
+                                    Kalender Jadwal Sholat {getMonthName(displayMonth)}
                                 </CardTitle>
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm">
+                                    <Button variant="outline" size="sm" onClick={goToPreviousMonth}>
                                         <ChevronLeft className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="outline" size="sm">
+                                    <Button variant="outline" size="sm" onClick={goToNextMonth}>
                                         <ChevronRight className="h-4 w-4" />
                                     </Button>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto max-h-96 overflow-y-auto">
                                 <table className="w-full text-sm">
-                                    <thead>
+                                    <thead className="sticky top-0 bg-white">
                                         <tr className="border-b">
                                             <th className="text-left p-2 font-medium">Tanggal</th>
                                             <th className="text-center p-2 font-medium">Subuh</th>
@@ -411,10 +476,10 @@ export default function JamSholat() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {monthlyPrayerTimes.slice(0, 10).map((day) => (
+                                        {monthlyPrayerTimes.map((day) => (
                                             <tr key={day.date} className="border-b hover:bg-gray-50">
                                                 <td className="p-2 font-medium">
-                                                    {day.date} Januari 2024
+                                                    {day.date} {getMonthName(displayMonth).split(' ')[0]}
                                                 </td>
                                                 <td className="text-center p-2">{day.subuh}</td>
                                                 <td className="text-center p-2">{day.dzuhur}</td>

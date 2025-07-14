@@ -171,12 +171,12 @@ export default function LaporanKas({
                                         Kelola dan pantau keuangan masjid secara real-time
                                     </p>
                                 </div>
-                                <div className="mt-4 flex gap-3 md:mt-0">
+                                {/* <div className="mt-4 flex gap-3 md:mt-0">
                                     <Button variant="outline" className="flex items-center gap-2" onClick={exportToPDF}>
                                         <Download className="h-4 w-4" />
                                         Export
                                     </Button>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
 

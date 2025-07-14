@@ -1,0 +1,175 @@
+SEQUENCE DIAGRAM PER FITUR SIMASJID
+===================================
+
+1. SEQUENCE DIAGRAM LAPORAN KAS
+-------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+actor Admin
+participant "Web" as Web
+participant "KasController" as Controller
+participant "LaporanKas" as Model
+
+Admin -> Web: akses menu kas
+Web -> Controller: getKasList()
+Controller -> Model: ambil data kas
+Model --> Controller: data kas
+Controller --> Web: tampilkan data
+Admin -> Web: tambah/edit/hapus transaksi
+Web -> Controller: simpan perubahan
+Controller -> Model: update data
+Model --> Controller: hasil
+Controller --> Web: refresh data
+@enduml
+```
+
+2. SEQUENCE DIAGRAM LAPORAN INFAQ & SEDEKAH
+-------------------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+actor Admin
+participant "Web" as Web
+participant "DonationController" as Controller
+participant "Donation" as Model
+
+Admin -> Web: akses menu infaq
+Web -> Controller: getDonasiList()
+Controller -> Model: ambil data donasi
+Model --> Controller: data donasi
+Controller --> Web: tampilkan data
+Admin -> Web: tambah/edit/hapus donasi
+Web -> Controller: simpan perubahan
+Controller -> Model: update data
+Model --> Controller: hasil
+Controller --> Web: refresh data
+@enduml
+```
+
+3. SEQUENCE DIAGRAM SIMULASI HITUNG ZAKAT
+-----------------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+actor User
+participant "Web" as Web
+
+User -> Web: akses menu zakat
+User -> Web: input data & klik hitung
+Web -> Web: proses perhitungan
+Web -> User: tampilkan hasil
+@enduml
+```
+
+4. SEQUENCE DIAGRAM JAM SHOLAT
+------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+actor User
+participant "Web" as Web
+
+User -> Web: akses menu jam sholat
+Web -> User: tampilkan jadwal sholat
+@enduml
+```
+
+5. SEQUENCE DIAGRAM JANJI TEMU USTADZ
+-------------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+actor User
+actor Admin
+participant "Web" as Web
+participant "JanjiTemuController" as Controller
+participant "JanjiTemu" as Model
+
+User -> Web: akses menu janji temu
+User -> Web: input data & submit
+Web -> Controller: simpan permintaan
+Controller -> Model: simpan data
+Model --> Controller: hasil
+Controller --> Web: notifikasi admin
+Admin -> Web: review permintaan
+Admin -> Controller: setujui/tolak
+Controller -> Model: update status
+Model --> Controller: hasil
+Controller --> Web: notifikasi user
+@enduml
+```
+
+6. SEQUENCE DIAGRAM BERITA & KEGIATAN
+-------------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+actor Admin
+participant "Web" as Web
+participant "BeritaKegiatanController" as Controller
+participant "BeritaKegiatan" as Model
+
+Admin -> Web: akses menu berita
+Web -> Controller: getBeritaList()
+Controller -> Model: ambil data berita
+Model --> Controller: data berita
+Controller --> Web: tampilkan data
+Admin -> Web: tambah/edit/hapus berita
+Web -> Controller: simpan perubahan
+Controller -> Model: update data
+Model --> Controller: hasil
+Controller --> Web: refresh data
+@enduml
+```
+
+7. SEQUENCE DIAGRAM PENGURUS MASJID
+-----------------------------------
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam ParticipantBackgroundColor white
+skinparam ParticipantBorderColor black
+
+actor Admin
+participant "Web" as Web
+participant "PengurusMasjidController" as Controller
+participant "PengurusMasjid" as Model
+
+Admin -> Web: akses menu pengurus
+Web -> Controller: getPengurusList()
+Controller -> Model: ambil data pengurus
+Model --> Controller: data pengurus
+Controller --> Web: tampilkan data
+Admin -> Web: tambah/edit/hapus pengurus
+Web -> Controller: simpan perubahan
+Controller -> Model: update data
+Model --> Controller: hasil
+Controller --> Web: refresh data
+@enduml
+``` 
